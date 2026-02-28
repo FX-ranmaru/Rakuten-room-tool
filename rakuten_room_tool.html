@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>楽天ROOM 投稿ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --card: #ffffff;
+    --primary: #e63b2e;
+    --primary-light: #fff0ef;
+    --midnight: #1e2a4a;
+    --midnight-light: #eef1f8;
+    --noon: #d97706;
+    --noon-light: #fef9ee;
+    --child: #3b82f6;
+    --child-light: #eff6ff;
+    --manga: #8b5cf6;
+    --manga-light: #f5f3ff;
+    --interior: #10b981;
+    --interior-light: #ecfdf5;
+    --gadget: #f59e0b;
+    --gadget-light: #fffbeb;
+    --text: #1a1a1a;
+    --text-sub: #6b7280;
+    --border: #e5e7eb;
+    --done-bg: #d1fae5;
+    --done-text: #065f46;
+    --radius: 16px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: var(--primary);
+    color: white;
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(230,59,46,0.3);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header p {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .progress-wrap {
+    background: rgba(255,255,255,0.2);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    background: white;
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 11px;
+    opacity: 0.9;
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  /* タブ */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--text-sub);
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+  }
+  .tab.active { background: var(--primary); color: white; }
+
+  /* カウンター */
+  .counters {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px 0;
+  }
+  .counter-card {
+    flex: 1;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .counter-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .counter-card .label { font-size: 11px; color: var(--text-sub); }
+  .counter-card .count { font-size: 15px; font-weight: 700; font-family: 'DM Sans', sans-serif; }
+
+  /* 投稿リスト */
+  .list {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .post-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .post-card.done {
+    opacity: 0.55;
+  }
+  .post-card.done .card-body {
+    background: var(--done-bg);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-no {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-sub);
+    min-width: 26px;
+  }
+  .time-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 99px;
+    flex-shrink: 0;
+  }
+  .time-midnight { background: var(--midnight-light); color: var(--midnight); }
+  .time-noon { background: var(--noon-light); color: var(--noon); }
+  .genre-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 99px;
+    flex-shrink: 0;
+  }
+  .genre-child { background: var(--child-light); color: var(--child); }
+  .genre-manga { background: var(--manga-light); color: var(--manga); }
+  .genre-interior { background: var(--interior-light); color: var(--interior); }
+  .genre-gadget { background: var(--gadget-light); color: var(--gadget); }
+
+  .card-body {
+    padding: 12px 14px;
+    transition: background 0.3s;
+  }
+  .product-name {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  /* リンクボタン */
+  .link-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-light);
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: background 0.2s;
+  }
+  .link-btn:active { background: #ffd9d7; }
+  .link-btn svg { flex-shrink: 0; }
+
+  /* 投稿文コピーエリア */
+  .copy-area {
+    background: #fafafa;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .copy-area:active { background: #f0f9ff; border-color: #60a5fa; }
+  .copy-hint {
+    font-size: 10px;
+    color: var(--text-sub);
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* コピー成功トースト */
+  .copy-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #111;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .copy-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* チェックボタン */
+  .check-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .check-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: #f3f4f6;
+    color: var(--text-sub);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .check-btn.checked {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .check-btn .check-icon {
+    width: 18px; height: 18px;
+    border: 2px solid currentColor;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .check-btn.checked .check-icon {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+  }
+
+  /* フィルター表示なし */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-sub);
+    font-size: 14px;
+  }
+
+  @media (min-width: 640px) {
+    .list { max-width: 600px; margin: 0 auto; }
+    .tabs { max-width: 600px; margin: 0 auto; }
+    .counters { max-width: 600px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🛍️ 楽天ROOM 投稿ツール</h1>
+      <p>暮らしを楽しむ主婦のセレクトショップ</p>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="progress-text" id="progressText">0 / 50 件投稿済み</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" onclick="filterTab('all', this)">すべて</button>
+  <button class="tab" onclick="filterTab('midnight', this)">🌙 深夜0時</button>
+  <button class="tab" onclick="filterTab('noon', this)">☀️ 昼12時</button>
+  <button class="tab" onclick="filterTab('child', this)">👶 子育て</button>
+  <button class="tab" onclick="filterTab('manga', this)">📚 漫画</button>
+  <button class="tab" onclick="filterTab('interior', this)">🏠 インテリア</button>
+  <button class="tab" onclick="filterTab('gadget', this)">✨ 便利グッズ</button>
+  <button class="tab" onclick="filterTab('undone', this)">未投稿のみ</button>
+</div>
+
+<div class="counters">
+  <div class="counter-card">
+    <div class="counter-dot" style="background:var(--midnight)"></div>
+    <div>
+      <div class="label">深夜0時</div>
+      <div class="count" id="cnt-midnight">0/30</div>
+    </div>
+  </div>
+  <div class="counter-card">
+    <div class="counter-dot" style="background:var(--noon)"></div>
+    <div>
+      <div class="label">昼12時</div>
+      <div class="count" id="cnt-noon">0/20</div>
+    </div>
+  </div>
+  <div class="counter-card">
+    <div class="counter-dot" style="background:var(--primary)"></div>
+    <div>
+      <div class="label">本日合計</div>
+      <div class="count" id="cnt-total">0/50</div>
+    </div>
+  </div>
+</div>
+
+<div class="list" id="list"></div>
+<div class="copy-toast" id="toast">✅ コピーしました！ROOMに貼り付けてください</div>
+
+<script>
+const posts = [
+  {no:1,time:"midnight",genre:"child",product:"マミーポコパンツ ドラえもん",text:"ドラえもん柄がかわいすぎる✨ 最大12時間しっかり吸収してくれるから夜も安心！うちの子も大好きでオムツ替えが楽しみになったくらい🥹 まとめ買いでポイントもガッツリ貯まります♪\n\n#子育て #ベビー用品 #おむつ #ドラえもん #楽天ROOM"},
+  {no:2,time:"midnight",genre:"child",product:"パンパース さらさらケア パンツ",text:"やわらか吸収シートがおしっこを素早く拡散してくれるから、肌荒れが気になるデリケートな赤ちゃんにも◎ 4個セットでお得にまとめ買いできるのが主婦としては嬉しいポイント！\n\n#パンパース #おむつ #ベビーグッズ #子育てグッズ #楽天ROOM"},
+  {no:3,time:"midnight",genre:"child",product:"メリーズ エアスルー パンツ",text:"通気性抜群のエアスルー構造で蒸れにくい🌬️ 敏感肌の子にも使いやすいと評判！3袋セットでお得感あり。オムツ選びに迷ったらまずこれを試してみて！\n\n#メリーズ #おむつ #ベビー用品 #子育てママ #楽天ROOM"},
+  {no:4,time:"midnight",genre:"child",product:"おやすみたまごプラス Cカーブ ベッド",text:"C型カーブで赤ちゃんがまるでお腹の中にいるような安心感🤱 寝かしつけに悩んでいたけどこれで劇的に改善！多機能タイプなので授乳クッションとしても大活躍。育児グッズの神アイテムです。\n\n#おやすみたまご #寝かしつけ #授乳クッション #新生児グッズ #楽天ROOM"},
+  {no:5,time:"midnight",genre:"child",product:"ビーボックス シッピーカップ ストローマグ",text:"寝た状態でも飲めて漏れない！受賞歴多数の優秀ストローマグ🏆 洗いやすい設計で毎日のお手入れがラクになりました。カラーバリエーションも豊富でプレゼントにもおすすめ✨\n\n#ストローマグ #ベビーマグ #離乳食グッズ #出産祝い #楽天ROOM"},
+  {no:6,time:"midnight",genre:"child",product:"はさマンモス ドア 指はさみ防止",text:"賃貸でも使える！ドアへの貼り付けタイプだから工事不要✨ 赤ちゃんがハイハイ・あんよを始めたら絶対に用意してほしい安全グッズ。これがあるだけで毎日のヒヤヒヤが減りました😌\n\n#指はさみ防止 #ベビー安全グッズ #子育てグッズ #赤ちゃんがいる家 #楽天ROOM"},
+  {no:7,time:"midnight",genre:"child",product:"シームレス プレイマット 抗菌 大判",text:"溝がないからサッと拭けて清潔を保てる✨ 抗菌加工で小さい子がいる家庭にも安心🧼 新生児から長く使えるのでコスパも優秀！北欧風デザインでインテリアにもなじみます。\n\n#プレイマット #ベビーマット #子育てインテリア #出産準備 #楽天ROOM"},
+  {no:8,time:"midnight",genre:"child",product:"ピジョン 離乳食調理セット",text:"離乳食スタートに必要なものが全部そろう♪ すりつぶし・裏ごし・冷凍保存まで対応できてこれ1セットでOK！ピジョンの安心品質で初めてのママにも使いやすいと大好評です🌟\n\n#離乳食 #離乳食グッズ #ピジョン #子育てグッズ #楽天ROOM"},
+  {no:9,time:"midnight",genre:"child",product:"マンチキン ミラクルカップ ハンドル付き",text:"コップ飲みの練習にぴったりのミラクルカップ！どの角度でも飲めてこぼれにくい構造がすごすぎる🙌 1歳前後の飲み物練習期に本当に助かったアイテムです。\n\n#マンチキン #コップ練習 #ベビーグッズ #子育て便利グッズ #楽天ROOM"},
+  {no:10,time:"midnight",genre:"child",product:"ベビーモニター カメラ スマホ連携",text:"手が離せない家事中も赤ちゃんをそっと見守れる🎥 スマホと連携してリアルタイムで確認できるから安心感が段違い！1万円前後でこのクオリティはコスパ最強だと思います。\n\n#ベビーモニター #育児グッズ #子育て #見守りカメラ #楽天ROOM"},
+  {no:11,time:"midnight",genre:"interior",product:"収納ボックス 折りたたみ キャスター付き",text:"折りたためるからオフシーズンの収納もコンパクト✨ キャスター付きで移動もラクラク！5面開閉できるから大きなものも入れやすい。押し入れ・クローゼット整理に超おすすめです。\n\n#収納ボックス #収納グッズ #整理整頓 #インテリア #楽天ROOM"},
+  {no:12,time:"midnight",genre:"interior",product:"ふわとろ毛布 蓄熱 吸湿発熱",text:"ふわっとろとろの肌触りがやみつきになる🥰 蓄熱・吸湿発熱素材で寒い季節も暖かく過ごせます！カラーバリエーションが豊富でインテリアのアクセントにも◎ 一度使ったら手放せない！\n\n#毛布 #ブランケット #寝具 #冬支度 #楽天ROOM"},
+  {no:13,time:"midnight",genre:"interior",product:"割れない鏡 全身鏡 軽量 壁掛け",text:"軽量だから女性1人でも取り付け可能✨ 割れないから子どもがいても安心！歪みがほぼなくてきれいに映る🪞 賃貸の壁にも対応できるタイプが多くて助かります。\n\n#全身鏡 #姿見 #インテリア #壁掛けミラー #楽天ROOM"},
+  {no:14,time:"midnight",genre:"interior",product:"チェスト スリム 引き出し 収納",text:"中身が見えないから生活感が出にくい！すっきりした見た目でリビングにもなじむ👌 スリムタイプは狭い部屋でも置きやすくて本当に助かります。衣装ケースとしても優秀！\n\n#チェスト #収納家具 #スリム収納 #インテリア #楽天ROOM"},
+  {no:15,time:"midnight",genre:"interior",product:"ジョイントマット 極厚20mm 防音 大判",text:"防音効果が高くて赤ちゃんがいる家庭にも最適🏠 極厚20mmでクッション性抜群！抗菌加工&床暖房対応で安心して使えます。大判サイズで繋ぎ目が少なく見た目もきれい✨\n\n#ジョイントマット #防音マット #子育てインテリア #赤ちゃん #楽天ROOM"},
+  {no:16,time:"midnight",genre:"interior",product:"高反発マットレス 三つ折り シングル",text:"三つ折りで収納も簡単✨ 高反発素材で腰をしっかりサポートしてくれるから朝の目覚めが変わった！敷布団代わりにもなるし来客用にも重宝します。コスパも申し分なし🌙\n\n#マットレス #高反発マットレス #睡眠 #寝具 #楽天ROOM"},
+  {no:17,time:"midnight",genre:"interior",product:"すのこベッド フレーム シングル",text:"通気性バツグンのすのこ素材でカビが生えにくい！シンプルなデザインがどんな部屋にもなじみます🛏️ 組み立ても比較的かんたんで女性一人でも設置できた！というレビューが多数。\n\n#すのこベッド #ベッド #寝室インテリア #ナチュラルインテリア #楽天ROOM"},
+  {no:18,time:"midnight",genre:"interior",product:"ロールスクリーン 遮光 つっぱり オーダー",text:"工事不要のつっぱりタイプだから賃貸にも安心✨ 遮光1級で光をしっかりシャットアウト！サイズオーダーできるから窓にぴったりフィットします。一気に部屋がオシャレになる✨\n\n#ロールスクリーン #遮光 #カーテン #インテリア #楽天ROOM"},
+  {no:19,time:"midnight",genre:"interior",product:"フォトフレーム 北欧 おしゃれ 壁掛け",text:"押し花やポストカードを挟んでおしゃれに飾れる✨ 北欧テイストのデザインがSNSでも話題🌿 プチプラなのにセンスよく見せてくれるから一人暮らしのインテリアにも◎\n\n#フォトフレーム #北欧インテリア #壁飾り #おしゃれインテリア #楽天ROOM"},
+  {no:20,time:"midnight",genre:"interior",product:"山崎実業 マグネット シャンプーボトル 浮かせる収納",text:"浮かせる収納で水垢・ヌメリ知らず✨ マグネットで簡単に着脱できるから掃除が超ラクになった！山崎実業のシンプルデザインはバスルームをすっきり見せてくれます🛁\n\n#山崎実業 #浮かせる収納 #バスルーム収納 #詰め替えボトル #楽天ROOM"},
+  {no:21,time:"midnight",genre:"gadget",product:"スターフィルター 換気扇 レンジフード",text:"楽天総合1位🏆 換気扇をフィルターで覆うだけでお掃除がラクになる！油汚れがフィルターにたまるから換気扇本体がきれいなまま✨ コスパ最強の神グッズです。\n\n#換気扇フィルター #掃除グッズ #キッチン便利グッズ #時短家事 #楽天ROOM"},
+  {no:22,time:"midnight",genre:"gadget",product:"詰め替えそのまま シャンプー 3個組",text:"詰め替えパックをそのままセットするだけ！もう詰め替え作業から解放される✨ メーカー公式だから安心。シャンプー・コンディショナー・リンスを3個まとめて管理できます🛁\n\n#詰め替えそのまま #シャンプー #バスルーム #時短グッズ #楽天ROOM"},
+  {no:23,time:"midnight",genre:"gadget",product:"保存容器 ワンタッチ 密閉 調味料",text:"パッキン付きで密閉できるから乾燥・湿気から食材を守ってくれる！ワンタッチで開け閉めできて使いやすい✨ 麦茶パックの収納にもぴったりサイズです☕\n\n#保存容器 #調味料収納 #キッチングッズ #食品保存 #楽天ROOM"},
+  {no:24,time:"midnight",genre:"gadget",product:"バッグインバッグ 軽量 メッシュ 吊り下げ",text:"バッグの中がぐちゃぐちゃ問題を解決🙌 メッシュ素材で中身が見えるから取り出しやすい！軽量タイプでバッグが重くならないのも◎ 通勤・お出かけ・旅行に大活躍。\n\n#バッグインバッグ #バッグ整理 #便利グッズ #おでかけグッズ #楽天ROOM"},
+  {no:25,time:"midnight",genre:"gadget",product:"圧縮バッグ 旅行用 トラベルポーチ",text:"旅行のスーツケースにパンパンに詰め込んでいたあの苦労がなくなった✈️ 圧縮するだけで衣類がコンパクトに！軽量素材でポーチ自体も軽い。旅行好きなら絶対持っておきたい！\n\n#圧縮バッグ #旅行グッズ #旅行準備 #トラベルポーチ #楽天ROOM"},
+  {no:26,time:"midnight",genre:"gadget",product:"ビタントニオ ワッフルメーカー ホットサンド",text:"朝食がおしゃれカフェ気分に🧇✨ ワッフルとホットサンドが1台で作れる優秀家電！子どもが喜ぶのはもちろん、休日のブランチにも大活躍。プレゼントとしても人気です🎁\n\n#ワッフルメーカー #ホットサンド #ビタントニオ #朝食グッズ #楽天ROOM"},
+  {no:27,time:"midnight",genre:"gadget",product:"車用ゴミ箱 スリム PUレザー おしゃれ",text:"車内をきれいに保ちたい人に！PUレザーがおしゃれで高見えする🚗✨ スリムタイプだからシートの隙間にすっきり収まります。家族でのドライブが多いなら絶対に重宝します。\n\n#車用ゴミ箱 #カーグッズ #車内収納 #ドライブグッズ #楽天ROOM"},
+  {no:28,time:"midnight",genre:"gadget",product:"スマホホルダー 自転車 落下防止",text:"楽天1位🏆 しっかり固定されるから走行中もスマホが安定✨ 地図を見ながら自転車でお出かけするのに超便利！子どもの送り迎えでも大活躍のグッズです🚲\n\n#スマホホルダー #自転車グッズ #ママチャリ #お出かけグッズ #楽天ROOM"},
+  {no:29,time:"midnight",genre:"gadget",product:"折りたたみケトル 海外対応 トラベル",text:"コンパクトに折りたためるから旅行のカバンにすっぽり入る✈️ 海外でも使えるから出張・旅行のたびに活躍中！電気ケトル派の旅行好きには必携アイテムです☕\n\n#折りたたみケトル #トラベルグッズ #旅行便利グッズ #電気ケトル #楽天ROOM"},
+  {no:30,time:"midnight",genre:"gadget",product:"ヒツジのいらない枕 快眠 まくら",text:"名前が面白いけど本当によく眠れる！ふんわり包み込まれるような感触が気持ちよくて毎晩のお気に入りに🌙 プレゼントとしても喜ばれる一品です。快眠したい人はぜひ。\n\n#枕 #快眠グッズ #睡眠 #寝具 #楽天ROOM"},
+  {no:31,time:"noon",genre:"manga",product:"鬼滅の刃 コミック 全巻セット",text:"社会現象になったあの大人気作をまだ読んでいないなら今すぐ読んで！😭 泣けて感動できてアクションも最高。全巻一気読みしたら止まらなくなります。楽天なら全巻セットでお得に♪\n\n#鬼滅の刃 #漫画 #コミック #アニメ #楽天ROOM"},
+  {no:32,time:"noon",genre:"manga",product:"ワンピース 最新刊 コミック",text:"週刊少年ジャンプの長期連載もついに終盤！🏴‍☠️ 今から追いかけても全然間に合います。楽天で最新刊をチェックしながら過去巻もまとめ買いがおすすめ✨\n\n#ワンピース #ONE_PIECE #漫画 #コミック #楽天ROOM"},
+  {no:33,time:"noon",genre:"manga",product:"呪術廻戦 コミック",text:"アニメも大人気の呪術廻戦📚 独特の世界観とバトルシーンが最高すぎる！ハマると沼なので覚悟して読んでください笑 コミックで手元に置いておきたい作品です。\n\n#呪術廻戦 #漫画 #コミック #アニメ好き #楽天ROOM"},
+  {no:34,time:"noon",genre:"manga",product:"進撃の巨人 コミック 完結 全巻",text:"完結済みだから一気読みができる！🔥 衝撃のストーリーと伏線回収に震えた名作。アニメも見たけど漫画で読むとまた違う感動がある✨ 全巻揃えて手元に置きたい不朽の名作。\n\n#進撃の巨人 #漫画 #コミック #完結 #楽天ROOM"},
+  {no:35,time:"noon",genre:"manga",product:"チェンソーマン コミック",text:"独特の世界観と予測不能なストーリーにドはまり中📖 絵のタッチも個性的でクセになる！アニメとあわせて楽しんでほしい。読み返すたびに新しい発見がある深い作品です。\n\n#チェンソーマン #漫画 #コミック #アニメ #楽天ROOM"},
+  {no:36,time:"noon",genre:"manga",product:"葬送のフリーレン コミック",text:"アニメ化で話題沸騰中🌟 魔王を倒した後の世界を描く異色のファンタジー。テンポがゆったりしているのに読み始めると止まらない不思議な魅力があります✨ 感動したい人におすすめ。\n\n#葬送のフリーレン #フリーレン #漫画 #コミック #楽天ROOM"},
+  {no:37,time:"noon",genre:"manga",product:"ダンジョン飯 コミック 完結 全巻",text:"完結済みで一気読みできる！🐉 ダンジョンの魔物を料理して食べるというぶっ飛んだ設定なのにめちゃくちゃ面白い。グルメ漫画としても読めるし冒険譚としても最高！アニメも好評。\n\n#ダンジョン飯 #漫画 #コミック #ファンタジー #楽天ROOM"},
+  {no:38,time:"noon",genre:"manga",product:"SPY×FAMILY スパイファミリー コミック",text:"家族全員で楽しめるハートフルスパイ漫画🕵️ アーニャが可愛すぎてメロメロ🥰 ストーリーも笑えて感動できてバランス最高！子どもから大人まで読める名作です。\n\n#スパイファミリー #SPY_FAMILY #漫画 #アニメ #楽天ROOM"},
+  {no:39,time:"noon",genre:"manga",product:"推しの子 コミック",text:"芸能界の裏側を描いたダークな展開が衝撃的📺 アニメのOPが話題になったけど漫画の方がさらに詳しく楽しめます✨ 感情移入しすぎて涙が止まらないシーンも多数。ぜひ読んで！\n\n#推しの子 #漫画 #コミック #アニメ #楽天ROOM"},
+  {no:40,time:"noon",genre:"manga",product:"アニメ フィギュア 推し活 グッズ",text:"好きなキャラクターのフィギュアをコレクションするのが最近のマイブーム✨ 楽天で探すと限定品やレア商品も見つかることが！推しのグッズで部屋をデコレーションしよう🌟\n\n#フィギュア #アニメグッズ #推し活 #コレクション #楽天ROOM"},
+  {no:41,time:"noon",genre:"child",product:"知育おもちゃ 1歳 木製 積み木",text:"手先を使って遊びながら賢くなる知育おもちゃ🧩 木製素材だから安心・安全！口に入れても大丈夫な設計のものも多数。1歳の誕生日プレゼントにも大人気です🎁\n\n#知育おもちゃ #木製おもちゃ #1歳 #子育てグッズ #楽天ROOM"},
+  {no:42,time:"noon",genre:"child",product:"ベビーゲート 突っ張り 階段 キッチン",text:"つっぱりタイプで壁に穴を開けずに設置できる✨ キッチンや階段への侵入を防いでくれる安全グッズ！ハイハイ期〜あんよ期の子どもがいる家庭には必須アイテムです。\n\n#ベビーゲート #赤ちゃん安全 #子育てグッズ #転落防止 #楽天ROOM"},
+  {no:43,time:"noon",genre:"child",product:"水筒 子供用 ワンタッチ 保冷保温",text:"幼稚園・保育園・小学校デビューに向けて用意したい子ども用水筒✨ ワンタッチで開けられて子どもが自分で使いやすい！保冷効果も長続きするので夏も安心。\n\n#子供水筒 #水筒 #保育園グッズ #幼稚園グッズ #楽天ROOM"},
+  {no:44,time:"noon",genre:"child",product:"エルゴ 抱っこ紐 ベビーキャリア",text:"ママの腰への負担が全然違う！長時間使っても疲れにくい設計🤱 新生児から使えてコスパ◎ 抱っこ紐選びで迷ったらエルゴは鉄板の選択肢です。セカンド抱っこ紐にも人気。\n\n#抱っこ紐 #エルゴ #ベビーキャリア #子育てグッズ #楽天ROOM"},
+  {no:45,time:"noon",genre:"child",product:"哺乳瓶洗い 泡スプレー ピジョン 詰め替え",text:"哺乳瓶洗いの詰め替え用！ピジョンの安心ブランドで赤ちゃんにも安全😌 泡タイプだから隅々まできれいに洗える✨ まとめて4回分でコスパも◎ 毎日使うものだから品質重視！\n\n#哺乳瓶洗い #ピジョン #赤ちゃんグッズ #育児グッズ #楽天ROOM"},
+  {no:46,time:"noon",genre:"gadget",product:"換気扇フィルター スターフィルター 取替え",text:"楽天総合1位の神グッズをリピ買い中🏆 設置がとても簡単で、交換するだけでキッチンを清潔に保てる！毎月の換気扇掃除がなくなったのは本当に感動もの✨ 主婦の味方です！\n\n#換気扇フィルター #キッチングッズ #掃除 #時短家事 #楽天ROOM"},
+  {no:47,time:"noon",genre:"gadget",product:"ワイヤレスイヤホン Bluetooth 完全独立",text:"家事しながら音楽やポッドキャストが楽しめるワイヤレスイヤホン🎵 コードがないからストレスフリー！充電も長持ちするタイプを選べば一日中使えます。育児中の隙間リフレッシュに🌿\n\n#ワイヤレスイヤホン #Bluetooth #音楽 #在宅グッズ #楽天ROOM"},
+  {no:48,time:"noon",genre:"gadget",product:"ロボット掃除機 スマホ連携 自動掃除",text:"もはや家事の相棒🤖 外出中に自動で掃除してくれるから帰宅したらきれいなお部屋が待っている！子育て中で掃除の時間が取れないときに本当に助かります。スマホ操作も簡単✨\n\n#ロボット掃除機 #自動掃除機 #時短家事 #家事グッズ #楽天ROOM"},
+  {no:49,time:"noon",genre:"gadget",product:"ハンディファン 携帯扇風機 USB充電 折りたたみ",text:"暑い季節のおでかけに必携アイテム🌬️ USB充電できるから繰り返し使えてエコ♻️ コンパクトに折りたためてバッグに入るサイズ感が◎ 子どもの夏場の外遊びにも大活躍！\n\n#ハンディファン #携帯扇風機 #夏グッズ #熱中症対策 #楽天ROOM"},
+  {no:50,time:"noon",genre:"gadget",product:"シリコン 調理器具セット 食洗機対応",text:"食洗機で丸洗いできるシリコン製の調理器具✨ 熱に強くて変形しないから長く使えます！カラーがかわいくてキッチンが明るくなる🌈 料理が楽しくなる便利グッズです🍳\n\n#シリコン調理器具 #食洗機対応 #キッチングッズ #料理グッズ #楽天ROOM"},
+];
+
+const genreLabel = {child:"👶 子育て", manga:"📚 漫画", interior:"🏠 インテリア", gadget:"✨ 便利グッズ"};
+const timeLabel = {midnight:"🌙 深夜0時", noon:"☀️ 昼12時"};
+let doneSet = new Set(JSON.parse(localStorage.getItem('done') || '[]'));
+let currentFilter = 'all';
+
+function rakutenUrl(product) {
+  return 'https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(product) + '/';
+}
+
+function saveDone() {
+  localStorage.setItem('done', JSON.stringify([...doneSet]));
+}
+
+function updateProgress() {
+  const total = posts.length;
+  const done = doneSet.size;
+  const pct = Math.round(done / total * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total} 件投稿済み`;
+
+  const midnightDone = posts.filter(p => p.time === 'midnight' && doneSet.has(p.no)).length;
+  const noonDone = posts.filter(p => p.time === 'noon' && doneSet.has(p.no)).length;
+  document.getElementById('cnt-midnight').textContent = `${midnightDone}/30`;
+  document.getElementById('cnt-noon').textContent = `${noonDone}/20`;
+  document.getElementById('cnt-total').textContent = `${done}/50`;
+}
+
+function filterTab(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('list');
+  let filtered = posts;
+  if (currentFilter === 'midnight') filtered = posts.filter(p => p.time === 'midnight');
+  else if (currentFilter === 'noon') filtered = posts.filter(p => p.time === 'noon');
+  else if (currentFilter === 'undone') filtered = posts.filter(p => !doneSet.has(p.no));
+  else if (['child','manga','interior','gadget'].includes(currentFilter)) filtered = posts.filter(p => p.genre === currentFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">🎉 このフィルターの投稿はすべて完了しました！</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(p => {
+    const done = doneSet.has(p.no);
+    return `
+    <div class="post-card ${done ? 'done' : ''}" id="card-${p.no}">
+      <div class="card-header">
+        <span class="card-no">#${p.no}</span>
+        <span class="time-badge time-${p.time}">${timeLabel[p.time]}</span>
+        <span class="genre-badge genre-${p.genre}">${genreLabel[p.genre]}</span>
+      </div>
+      <div class="card-body">
+        <div class="product-name">${p.product}</div>
+        <a class="link-btn" href="${rakutenUrl(p.product)}" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          楽天市場で商品を探す →
+        </a>
+        <div class="copy-area" onclick="copyText(${p.no}, this)">${p.text}</div>
+        <div class="copy-hint">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          タップでコピー（投稿文＋ハッシュタグ）
+        </div>
+        <div class="check-row">
+          <button class="check-btn ${done ? 'checked' : ''}" onclick="toggleDone(${p.no})" id="btn-${p.no}">
+            <span class="check-icon">
+              ${done ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+            </span>
+            ${done ? '投稿済み' : '投稿済みにする'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyText(no, el) {
+  const post = posts.find(p => p.no === no);
+  if (!post) return;
+  navigator.clipboard.writeText(post.text).then(() => {
+    showToast();
+  }).catch(() => {
+    // fallback for older iOS
+    const ta = document.createElement('textarea');
+    ta.value = post.text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  });
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function toggleDone(no) {
+  if (doneSet.has(no)) {
+    doneSet.delete(no);
+  } else {
+    doneSet.add(no);
+  }
+  saveDone();
+  updateProgress();
+  // カードだけ再描画
+  const post = posts.find(p => p.no === no);
+  const done = doneSet.has(no);
+  const card = document.getElementById('card-' + no);
+  if (card) {
+    card.classList.toggle('done', done);
+    const btn = document.getElementById('btn-' + no);
+    btn.className = 'check-btn' + (done ? ' checked' : '');
+    btn.innerHTML = `<span class="check-icon">${done ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</span>${done ? '投稿済み' : '投稿済みにする'}`;
+  }
+  // 未投稿フィルター中は再描画
+  if (currentFilter === 'undone') renderList();
+}
+
+// 初期化
+updateProgress();
+renderList();
+</script>
+</body>
+</html>
