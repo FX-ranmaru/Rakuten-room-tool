@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>楽天ROOM 投稿ツール Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0f11;--surface:#1a1a1f;--surface2:#24242c;--border:#2e2e38;
+  --primary:#ff4d4d;--primary-d:#cc2e2e;--accent:#ffd166;--green:#06d6a0;
+  --blue:#4dabf7;--purple:#b197fc;
+  --text:#f0f0f5;--text-sub:#8b8b9e;--text-dim:#55555f;
+  --radius:14px;--radius-sm:9px;--shadow:0 4px 24px rgba(0,0,0,0.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.header-brand{display:flex;align-items:center;gap:10px;}
+.header-logo{width:34px;height:34px;background:var(--primary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.header-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.3px;line-height:1.1;}
+.header-sub{font-size:10px;color:var(--text-sub);margin-top:1px;}
+.header-stats{display:flex;gap:16px;align-items:center;}
+.stat-item{text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent);line-height:1;}
+.stat-label{font-size:9px;color:var(--text-dim);margin-top:2px;}
+
+/* API Banner */
+.api-banner{background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.api-banner label{font-size:11px;color:var(--text-sub);white-space:nowrap;}
+.api-input{flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;padding:7px 11px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color 0.2s;}
+.api-input:focus{border-color:var(--primary);}
+.api-input::placeholder{color:var(--text-dim);}
+.api-save-btn{background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);padding:7px 16px;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap;transition:background 0.2s;}
+.api-save-btn:hover{background:var(--primary-d);}
+.api-status{font-size:11px;padding:4px 10px;border-radius:99px;font-weight:600;white-space:nowrap;}
+.api-status.ok{background:rgba(6,214,160,0.15);color:var(--green);}
+.api-status.ng{background:rgba(255,77,77,0.15);color:var(--primary);}
+
+/* Tabs */
+.tab-nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;overflow-x:auto;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;padding:14px 18px;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;color:var(--text-sub);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);}
+
+/* Panels */
+.tab-panel{display:none;padding:20px 16px;max-width:680px;margin:0 auto;}
+.tab-panel.active{display:block;}
+
+/* Section title */
+.section-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';display:block;width:3px;height:16px;background:var(--primary);border-radius:99px;}
+
+/* Controls */
+.control-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.select,.input-field{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;padding:10px 13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;}
+.select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8b9e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;cursor:pointer;}
+.select:focus,.input-field:focus{border-color:var(--primary);}
+.input-field{flex:1;min-width:160px;}
+.input-field::placeholder{color:var(--text-dim);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.btn-primary{background:var(--primary);color:white;}
+.btn-primary:hover{background:var(--primary-d);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--text-sub);}
+.btn-accent{background:var(--accent);color:#111;}
+.btn-green{background:rgba(6,214,160,0.15);color:var(--green);border:1px solid rgba(6,214,160,0.3);}
+.btn-green:hover{background:rgba(6,214,160,0.25);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn:disabled{opacity:0.4;pointer-events:none;}
+
+/* Spinner */
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-state{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px;color:var(--text-sub);font-size:13px;}
+
+/* Product Cards */
+.product-grid{display:flex;flex-direction:column;gap:12px;}
+.product-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color 0.2s,transform 0.15s;animation:fadeUp 0.3s ease both;}
+.product-card:hover{border-color:var(--text-dim);transform:translateY(-1px);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.product-card-inner{display:flex;}
+.product-img{width:90px;height:90px;object-fit:cover;flex-shrink:0;background:var(--surface2);}
+.product-img-placeholder{width:90px;height:90px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;color:var(--text-dim);}
+.product-info{flex:1;padding:12px;min-width:0;}
+.product-rank{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.product-name{font-size:13px;font-weight:700;line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.product-shop{font-size:11px;color:var(--text-sub);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.product-price{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--primary);}
+.product-price span{font-size:10px;font-family:'Noto Sans JP',sans-serif;color:var(--text-sub);font-weight:400;}
+.product-actions{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface2);}
+
+/* Post Cards */
+.post-list{display:flex;flex-direction:column;gap:10px;}
+.post-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color 0.2s;animation:fadeUp 0.25s ease both;}
+.post-card.done{opacity:0.45;}
+.post-card-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.post-no{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--text-dim);min-width:24px;}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px;}
+.badge-midnight{background:rgba(77,171,247,0.15);color:var(--blue);}
+.badge-noon{background:rgba(255,209,102,0.15);color:var(--accent);}
+.badge-child{background:rgba(77,171,247,0.12);color:var(--blue);}
+.badge-manga{background:rgba(177,151,252,0.15);color:var(--purple);}
+.badge-interior{background:rgba(6,214,160,0.12);color:var(--green);}
+.badge-gadget{background:rgba(255,209,102,0.12);color:var(--accent);}
+.badge-new{background:rgba(255,77,77,0.15);color:var(--primary);}
+.post-card-body{padding:12px 14px;}
+.post-product-name{font-size:13px;font-weight:700;margin-bottom:10px;}
+.post-text-area{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-all;cursor:pointer;transition:border-color 0.2s,background 0.2s;}
+.post-text-area:active{border-color:var(--primary);background:#1f1f2a;}
+.copy-hint{font-size:10px;color:var(--text-dim);margin-top:6px;display:flex;align-items:center;gap:4px;}
+.post-card-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);gap:8px;}
+.check-btn{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-sub);font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;padding:7px 13px;cursor:pointer;transition:all 0.2s;}
+.check-btn.done{background:rgba(6,214,160,0.12);border-color:rgba(6,214,160,0.3);color:var(--green);}
+.check-icon{width:16px;height:16px;border:1.5px solid currentColor;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;}
+.check-btn.done .check-icon{background:var(--green);border-color:var(--green);color:#0f0f11;}
+
+/* Progress */
+.progress-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
+.progress-row{display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;}
+.progress-label{font-size:12px;color:var(--text-sub);}
+.progress-count{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--accent);}
+.progress-bar-wrap{background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;margin-bottom:10px;}
+.progress-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width 0.5s ease;}
+.progress-mini-row{display:flex;gap:12px;}
+.progress-mini{flex:1;background:var(--surface2);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px;}
+.mini-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.mini-label{font-size:10px;color:var(--text-sub);}
+.mini-count{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;margin-left:auto;}
+
+/* Filter Chips */
+.filter-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none;}
+.filter-chips::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;padding:6px 13px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--surface2);color:var(--text-sub);cursor:pointer;transition:all 0.15s;}
+.chip.active{background:var(--primary);border-color:var(--primary);color:white;}
+
+/* Tone chips */
+.tone-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.tone-chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--surface2);color:var(--text-sub);cursor:pointer;transition:all 0.15s;}
+.tone-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(255,209,102,0.08);}
+
+/* Generated post */
+.generated-post{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:10px;animation:fadeUp 0.2s ease;}
+.generated-post-text{font-size:13px;line-height:1.9;white-space:pre-wrap;word-break:break-all;cursor:pointer;transition:background 0.15s;padding:8px;border-radius:var(--radius-sm);}
+.generated-post-text:active{background:#2a2a35;}
+.generated-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+
+/* Settings */
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.settings-card h3{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.05em;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;font-size:13px;}
+.settings-row:last-child{margin-bottom:0;}
+.settings-row label{color:var(--text-sub);font-size:12px;}
+.settings-val{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);}
+.range-input{width:100px;accent-color:var(--primary);}
+
+/* Empty / Error */
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-dim);}
+.empty-state .icon{font-size:40px;margin-bottom:12px;}
+.empty-state p{font-size:13px;line-height:1.7;}
+.error-state{background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.2);border-radius:var(--radius);padding:14px 16px;font-size:13px;color:var(--primary);margin-bottom:16px;}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--green);color:#0f1f1a;font-size:13px;font-weight:700;padding:10px 22px;border-radius:99px;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:9999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(6,214,160,0.4);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:480px){
+  .header-stats{gap:10px;}
+  .stat-num{font-size:16px;}
+  .product-img,.product-img-placeholder{width:76px;height:76px;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">🛍️</div>
+    <div>
+      <div class="header-title">ROOM Tool Pro</div>
+      <div class="header-sub">楽天ROOM 投稿支援ツール</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-item">
+      <div class="stat-num" id="stat-today">0</div>
+      <div class="stat-label">本日投稿</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">累計投稿</div>
+    </div>
+  </div>
+</header>
+
+<div class="api-banner">
+  <label>楽天API ID</label>
+  <input class="api-input" id="apiIdInput" type="text" placeholder="applicationId を入力（無料取得可）">
+  <button class="api-save-btn" onclick="saveApiId()">保存</button>
+  <span class="api-status ng" id="apiStatus">未設定</span>
+</div>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('ranking',this)">📊 ランキング</button>
+  <button class="tab-btn" onclick="switchTab('search',this)">🔍 商品検索</button>
+  <button class="tab-btn" onclick="switchTab('posts',this)">📋 投稿管理</button>
+  <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ 設定</button>
+</nav>
+
+<!-- ランキング -->
+<div class="tab-panel active" id="panel-ranking">
+  <div class="section-title">ジャンル別ランキング取得</div>
+  <div class="control-row">
+    <select class="select" id="rankGenre">
+      <option value="100000">総合</option>
+      <option value="101213">キッズ・ベビー・マタニティ</option>
+      <option value="562878">インテリア・寝具・収納</option>
+      <option value="558885">日用品・雑貨・文具</option>
+      <option value="101070">本・雑誌・コミック</option>
+      <option value="101240">家電・TV・AV機器</option>
+      <option value="558944">食品</option>
+      <option value="216131">美容・コスメ・香水</option>
+    </select>
+    <select class="select" id="rankPeriod">
+      <option value="day">デイリー</option>
+      <option value="weekly">ウィークリー</option>
+      <option value="monthly">マンスリー</option>
+    </select>
+    <button class="btn btn-primary" onclick="fetchRanking()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      取得
+    </button>
+  </div>
+  <div class="section-title" style="font-size:12px;margin-bottom:8px;">投稿トーン</div>
+  <div class="tone-row" id="toneRow">
+    <span class="tone-chip active" data-tone="主婦目線" onclick="selectTone(this,'toneRow','toneRanking')">👩 主婦目線</span>
+    <span class="tone-chip" data-tone="ママ共感" onclick="selectTone(this,'toneRow','toneRanking')">🤱 ママ共感</span>
+    <span class="tone-chip" data-tone="コスパ重視" onclick="selectTone(this,'toneRow','toneRanking')">💰 コスパ重視</span>
+    <span class="tone-chip" data-tone="感動レビュー" onclick="selectTone(this,'toneRow','toneRanking')">😭 感動レビュー</span>
+    <span class="tone-chip" data-tone="推し活" onclick="selectTone(this,'toneRow','toneRanking')">🌟 推し活</span>
+  </div>
+  <div id="rankingResult">
+    <div class="empty-state"><div class="icon">📊</div><p>ジャンルと期間を選んで<br>「取得」ボタンを押してください</p></div>
+  </div>
+</div>
+
+<!-- 商品検索 -->
+<div class="tab-panel" id="panel-search">
+  <div class="section-title">キーワードで商品検索</div>
+  <div class="control-row">
+    <input class="input-field" id="searchKeyword" type="text" placeholder="例：収納ボックス キャスター" maxlength="100">
+    <button class="btn btn-primary" onclick="searchItems()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      検索
+    </button>
+  </div>
+  <div class="control-row">
+    <select class="select" id="searchSort">
+      <option value="-reviewCount">レビュー件数順</option>
+      <option value="-reviewAverage">評価順</option>
+      <option value="-itemPrice">価格高い順</option>
+      <option value="+itemPrice">価格安い順</option>
+      <option value="standard">標準</option>
+    </select>
+    <select class="select" id="searchMinPrice">
+      <option value="">価格下限なし</option>
+      <option value="500">500円〜</option>
+      <option value="1000">1,000円〜</option>
+      <option value="3000">3,000円〜</option>
+      <option value="5000">5,000円〜</option>
+    </select>
+  </div>
+  <div class="tone-row" id="toneRowSearch">
+    <span class="tone-chip active" data-tone="主婦目線" onclick="selectTone(this,'toneRowSearch','toneSearch')">👩 主婦目線</span>
+    <span class="tone-chip" data-tone="ママ共感" onclick="selectTone(this,'toneRowSearch','toneSearch')">🤱 ママ共感</span>
+    <span class="tone-chip" data-tone="コスパ重視" onclick="selectTone(this,'toneRowSearch','toneSearch')">💰 コスパ重視</span>
+    <span class="tone-chip" data-tone="感動レビュー" onclick="selectTone(this,'toneRowSearch','toneSearch')">😭 感動レビュー</span>
+    <span class="tone-chip" data-tone="推し活" onclick="selectTone(this,'toneRowSearch','toneSearch')">🌟 推し活</span>
+  </div>
+  <div id="searchResult">
+    <div class="empty-state"><div class="icon">🔍</div><p>キーワードを入力して検索してください</p></div>
+  </div>
+</div>
+
+<!-- 投稿管理 -->
+<div class="tab-panel" id="panel-posts">
+  <div class="progress-section">
+    <div class="progress-row">
+      <span class="progress-label">本日の投稿進捗</span>
+      <span class="progress-count" id="progressCount">0 / 0</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-mini-row">
+      <div class="progress-mini">
+        <div class="mini-dot" style="background:var(--blue)"></div>
+        <span class="mini-label">🌙 深夜0時</span>
+        <span class="mini-count" id="miniMidnight" style="color:var(--blue)">0/0</span>
+      </div>
+      <div class="progress-mini">
+        <div class="mini-dot" style="background:var(--accent)"></div>
+        <span class="mini-label">☀️ 昼12時</span>
+        <span class="mini-count" id="miniNoon" style="color:var(--accent)">0/0</span>
+      </div>
+    </div>
+  </div>
+  <div class="filter-chips" id="postFilter">
+    <span class="chip active" onclick="filterPosts('all',this)">すべて</span>
+    <span class="chip" onclick="filterPosts('midnight',this)">🌙 深夜</span>
+    <span class="chip" onclick="filterPosts('noon',this)">☀️ 昼</span>
+    <span class="chip" onclick="filterPosts('undone',this)">未投稿</span>
+    <span class="chip" onclick="filterPosts('child',this)">👶 子育て</span>
+    <span class="chip" onclick="filterPosts('manga',this)">📚 漫画</span>
+    <span class="chip" onclick="filterPosts('interior',this)">🏠 インテリア</span>
+    <span class="chip" onclick="filterPosts('gadget',this)">✨ 便利グッズ</span>
+  </div>
+  <div class="control-row" style="margin-bottom:14px;">
+    <button class="btn btn-secondary btn-sm" onclick="shufflePosts()">🔀 シャッフル</button>
+    <button class="btn btn-secondary btn-sm" onclick="resetAllDone()">↩ チェックリセット</button>
+    <button class="btn btn-accent btn-sm" onclick="exportPosts()">📤 全文コピー</button>
+  </div>
+  <div class="post-list" id="postList"></div>
+</div>
+
+<!-- 設定 -->
+<div class="tab-panel" id="panel-settings">
+  <div class="section-title">ツール設定</div>
+  <div class="settings-card">
+    <h3>楽天API</h3>
+    <div class="settings-row"><label>applicationId</label><span class="settings-val" id="settingsApiVal">未設定</span></div>
+    <div style="margin-top:10px;">
+      <input class="api-input" id="settingsApiInput" style="width:100%;margin-bottom:8px;" type="text" placeholder="applicationId を入力">
+      <button class="btn btn-primary btn-sm" onclick="saveApiIdFromSettings()">保存</button>
+      <a href="https://webservice.rakuten.co.jp/" target="_blank" class="btn btn-secondary btn-sm" style="margin-left:6px;text-decoration:none;">無料取得 →</a>
+    </div>
+  </div>
+  <div class="settings-card">
+    <h3>投稿設定</h3>
+    <div class="settings-row">
+      <label>ハッシュタグ数</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" class="range-input" min="3" max="10" value="6" id="hashtagCount" oninput="updateHashtagCount(this.value)">
+        <span class="settings-val" id="hashtagCountVal">6</span>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>1日の目標投稿数</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" class="range-input" min="10" max="100" step="10" value="50" id="dailyGoal" oninput="updateDailyGoal(this.value)">
+        <span class="settings-val" id="dailyGoalVal">50</span>
+      </div>
+    </div>
+  </div>
+  <div class="settings-card">
+    <h3>データ管理</h3>
+    <div class="settings-row"><label>保存済み投稿数</label><span class="settings-val" id="savedPostCount">0</span></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" onclick="clearDoneData()">投稿済みをリセット</button>
+      <button class="btn btn-secondary btn-sm" onclick="clearAllPosts()">投稿リストをクリア</button>
+    </div>
+  </div>
+  <div class="settings-card">
+    <h3>APIについて</h3>
+    <p style="font-size:12px;line-height:1.8;color:var(--text-sub);">
+      楽天ウェブサービスAPIは無料で取得できます。1日100万リクエストまで無料です。<br>
+      <a href="https://webservice.rakuten.co.jp/" target="_blank" style="color:var(--primary);">→ 楽天デベロッパーサイトで取得</a>
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ============================================================
+// State
+// ============================================================
+const State = {
+  apiId: localStorage.getItem('rakuten_api_id') || '',
+  posts: JSON.parse(localStorage.getItem('room_posts') || '[]'),
+  done: new Set(JSON.parse(localStorage.getItem('room_done') || '[]')),
+  settings: JSON.parse(localStorage.getItem('room_settings') || '{"hashtagCount":6,"dailyGoal":50}'),
+  currentFilter: 'all',
+  toneRanking: '主婦目線',
+  toneSearch: '主婦目線',
+  todayKey: new Date().toISOString().slice(0,10),
+};
+
+function savePosts()    { localStorage.setItem('room_posts', JSON.stringify(State.posts)); }
+function saveDone()     { localStorage.setItem('room_done', JSON.stringify([...State.done])); }
+function saveSettings() { localStorage.setItem('room_settings', JSON.stringify(State.settings)); }
+
+// ============================================================
+// API ID
+// ============================================================
+function saveApiId() {
+  const val = document.getElementById('apiIdInput').value.trim();
+  if (!val) { showToast('⚠ IDを入力してください','warn'); return; }
+  State.apiId = val;
+  localStorage.setItem('rakuten_api_id', val);
+  updateApiStatus();
+  showToast('✅ APIキーを保存しました');
+}
+function saveApiIdFromSettings() {
+  document.getElementById('apiIdInput').value = document.getElementById('settingsApiInput').value;
+  saveApiId();
+}
+function updateApiStatus() {
+  const st = document.getElementById('apiStatus');
+  if (State.apiId) { st.textContent='設定済み ✓'; st.className='api-status ok'; }
+  else             { st.textContent='未設定';     st.className='api-status ng'; }
+}
+
+// ============================================================
+// Tabs
+// ============================================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='posts') renderPostList();
+  if (name==='settings') syncSettings();
+}
+
+// ============================================================
+// Tone
+// ============================================================
+function selectTone(el, rowId, stateKey) {
+  document.querySelectorAll('#'+rowId+' .tone-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  State[stateKey] = el.dataset.tone;
+}
+
+// ============================================================
+// Rakuten API — Ranking
+// ============================================================
+async function fetchRanking() {
+  if (!State.apiId) {
+    document.getElementById('rankingResult').innerHTML='<div class="error-state">⚠ APIキーが設定されていません。上部の入力欄から設定してください。</div>';
+    return;
+  }
+  const genre  = document.getElementById('rankGenre').value;
+  const period = document.getElementById('rankPeriod').value;
+  document.getElementById('rankingResult').innerHTML='<div class="loading-state"><div class="spinner"></div><p>ランキング取得中...</p></div>';
+  const url = `https://app.rakuten.co.jp/services/api/Ichiba/Ranking/20170628?format=json&applicationId=${State.apiId}&genreId=${genre}&period=${period}&hits=30`;
+  try {
+    const res=await fetch(url); const data=await res.json();
+    if (data.error) throw new Error(data.error_description||data.error);
+    renderProductCards(data.Items, 'rankingResult', 'ranking');
+  } catch(e) {
+    document.getElementById('rankingResult').innerHTML=`<div class="error-state">⚠ 取得失敗：${e.message}</div>`;
+  }
+}
+
+// ============================================================
+// Rakuten API — Search
+// ============================================================
+async function searchItems() {
+  if (!State.apiId) {
+    document.getElementById('searchResult').innerHTML='<div class="error-state">⚠ APIキーが設定されていません。</div>';
+    return;
+  }
+  const keyword   = document.getElementById('searchKeyword').value.trim();
+  const sort      = document.getElementById('searchSort').value;
+  const minPrice  = document.getElementById('searchMinPrice').value;
+  if (!keyword) { showToast('⚠ キーワードを入力してください','warn'); return; }
+  document.getElementById('searchResult').innerHTML='<div class="loading-state"><div class="spinner"></div><p>検索中...</p></div>';
+  let url=`https://app.rakuten.co.jp/services/api/Ichiba/Item/20170706?format=json&applicationId=${State.apiId}&keyword=${encodeURIComponent(keyword)}&sort=${encodeURIComponent(sort)}&hits=20`;
+  if (minPrice) url+=`&minPrice=${minPrice}`;
+  try {
+    const res=await fetch(url); const data=await res.json();
+    if (data.error) throw new Error(data.error_description||data.error);
+    renderProductCards(data.Items.map(i=>i.Item), 'searchResult', 'search');
+  } catch(e) {
+    document.getElementById('searchResult').innerHTML=`<div class="error-state">⚠ 検索失敗：${e.message}</div>`;
+  }
+}
+document.getElementById('searchKeyword').addEventListener('keydown', e=>{ if(e.key==='Enter') searchItems(); });
+
+// ============================================================
+// Render Product Cards
+// ============================================================
+function renderProductCards(items, containerId, mode) {
+  if (!items||!items.length) {
+    document.getElementById(containerId).innerHTML='<div class="empty-state"><div class="icon">😔</div><p>商品が見つかりませんでした</p></div>';
+    return;
+  }
+  const tone = mode==='ranking' ? State.toneRanking : State.toneSearch;
+  const html = items.map((raw,idx)=>{
+    const item   = mode==='ranking' ? raw.Item : raw;
+    const name   = (item.itemName||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const price  = item.itemPrice ? item.itemPrice.toLocaleString() : '—';
+    const shop   = (item.shopName||'').replace(/</g,'&lt;');
+    const itemUrl= item.itemUrl||'#';
+    const img    = item.mediumImageUrls&&item.mediumImageUrls[0] ? item.mediumImageUrls[0].imageUrl : null;
+    const code   = (item.itemCode||idx).toString().replace(/[^a-zA-Z0-9_-]/g,'_');
+    const rev    = item.reviewCount ? `⭐ ${item.reviewAverage} (${item.reviewCount.toLocaleString()}件)` : '';
+    const rank   = mode==='ranking' ? `🏆 ${idx+1}位` : rev;
+    const safeItem = encodeURIComponent(JSON.stringify({name:item.itemName||'',price,shop:item.shopName||'',url:itemUrl,code}));
+    return `
+    <div class="product-card" style="animation-delay:${idx*0.04}s">
+      <div class="product-card-inner">
+        ${img ? `<img class="product-img" src="${img}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;product-img-placeholder&quot;>🛒</div>'">` : '<div class="product-img-placeholder">🛒</div>'}
+        <div class="product-info">
+          <div class="product-rank">${rank}</div>
+          <div class="product-name">${name}</div>
+          <div class="product-shop">${shop}</div>
+          <div class="product-price">¥${price}<span> 税込</span></div>
+        </div>
+      </div>
+      <div class="product-actions">
+        <a href="${itemUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none;flex:1;justify-content:center;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          楽天で見る
+        </a>
+        <button class="btn btn-accent btn-sm" style="flex:1;justify-content:center;"
+          onclick="generatePost('${safeItem}','${tone}','gen-${code}')">✍️ 投稿生成</button>
+      </div>
+      <div id="gen-${code}"></div>
+    </div>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML=`<div class="product-grid">${html}</div>`;
+}
+
+// ============================================================
+// Post Generation
+// ============================================================
+const HASHTAG_POOL = {
+  child:    ['#子育て','#ベビーグッズ','#ママのおすすめ','#育児','#出産準備','#子育てグッズ','#ベビー用品','#子育て中ママ','#新生児グッズ','#出産祝い'],
+  interior: ['#インテリア','#収納','#おしゃれ部屋','#北欧インテリア','#部屋作り','#整理整頓','#スッキリ暮らし','#インテリア好き','#シンプルライフ','#賃貸インテリア'],
+  manga:    ['#漫画','#コミック','#おすすめ漫画','#アニメ好き','#漫画好き','#読書','#コミック好き','#本好き','#アニメ','#漫画沼'],
+  gadget:   ['#便利グッズ','#時短家事','#ライフハック','#おすすめ商品','#暮らしのアイデア','#主婦の味方','#日用品','#生活雑貨','#プチプラ','#コスパ最強'],
+  common:   ['#楽天購入品','#楽天お買い物','#おすすめ','#買ってよかった','#楽天ROOM'],
+};
+const POST_TEMPLATES = {
+  '主婦目線': [
+    (n,p)=>`${n}を使ってみたら想像以上によかった✨\n毎日の家事・育児が少しラクになる感覚、主婦にはたまらないです！\n¥${p}でこのクオリティは正直コスパ最強だと思う🥹\nリピ買い確定のアイテムです♪`,
+    (n,p)=>`${n}、ずっと気になっていてついに購入！\n使ってみてびっくり、めちゃくちゃ使いやすい😍\n主婦目線でこれは本当に買ってよかったアイテムです✨\n¥${p}でお試しあれ♪`,
+  ],
+  'ママ共感': [
+    (n,p)=>`育児中のママさんに絶対に見てほしい！\n${n}のおかげで毎日のお悩みが解決しました🥺✨\n子どもがいる家庭には本当にあってよかった一品。\n¥${p}でこの安心感、プレゼントにも◎`,
+    (n,p)=>`${n}、ママ友に教えてもらってから手放せない😭\n子育て中って本当に時間がないから、こういう便利グッズに助けられてます🙏\n¥${p}、出産祝いにも喜ばれます！`,
+  ],
+  'コスパ重視': [
+    (n,p)=>`${n}のコスパが神すぎる件について🏆\n¥${p}でこのクオリティ、正直反則レベル！\nレビュー件数も多くて口コミ評価も高いから安心して購入できます✨`,
+    (n,p)=>`コスパ重視派に声を大にして伝えたい！\n${n}は¥${p}なのにハイクオリティすぎて感動した🥰\nプチプラでしっかり使えるものを探してる人にぴったりです👍`,
+  ],
+  '感動レビュー': [
+    (n,p)=>`正直ここまでよいとは思っていなかった😭\n${n}を使い始めてから毎日のルーティンが変わりました！\n¥${p}でこんなに感動できるとは思わなかった✨\nもっと早く買えばよかった商品No.1です。`,
+    (n,p)=>`${n}、使ってみて涙が出るくらいよかった🥹\nずっと悩んでいたあの問題がこれ一つで解決！\n¥${p}は安い買い物だったと心から思います😊`,
+  ],
+  '推し活': [
+    (n,p)=>`${n}は推し活民にこそ見てほしい🔥\n¥${p}でゲットできるのに神クオリティ！\nコレクションに加えて後悔なし🌟`,
+    (n,p)=>`推しのグッズや漫画を楽天で探すなら絶対チェックして！\n${n}、¥${p}でゲットできます🌟\n推し活ライフがもっと豊かになること間違いなし✨`,
+  ],
+};
+
+function detectGenre(name) {
+  if (/ベビー|おむつ|哺乳|離乳|抱っこ|育児|子供|こども|キッズ|学童|マタニティ/.test(name)) return 'child';
+  if (/漫画|コミック|アニメ|フィギュア|推し|ライトノベル|ガチャ/.test(name)) return 'manga';
+  if (/収納|インテリア|カーテン|マット|ベッド|棚|ソファ|照明|ミラー|クッション|ラック/.test(name)) return 'interior';
+  return 'gadget';
+}
+function buildHashtags(name, genre, count) {
+  const pool = [...(HASHTAG_POOL[genre]||[]), ...HASHTAG_POOL.common];
+  return [...new Set(pool)].sort(()=>Math.random()-0.5).slice(0,count).join(' ')+' #楽天ROOM';
+}
+
+function generatePost(encodedItem, tone, genId) {
+  const item     = JSON.parse(decodeURIComponent(encodedItem));
+  const genre    = detectGenre(item.name);
+  const templates= POST_TEMPLATES[tone]||POST_TEMPLATES['主婦目線'];
+  const tpl      = templates[Math.floor(Math.random()*templates.length)];
+  const body     = tpl(item.name, item.price);
+  const tags     = buildHashtags(item.name, genre, State.settings.hashtagCount);
+  const fullText = body+'\n\n'+tags;
+
+  const safeText  = fullText.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+  const safeItem  = encodeURIComponent(JSON.stringify({name:item.name,price:item.price,shop:item.shop,url:item.url,code:item.code}));
+  const safeSave  = encodeURIComponent(JSON.stringify({name:item.name,url:item.url,genre,text:fullText}));
+
+  document.getElementById(genId).innerHTML=`
+    <div class="generated-post">
+      <div class="generated-post-text" onclick="copyText(\`${safeText}\`)">${fullText}</div>
+      <div class="copy-hint" style="margin-bottom:0;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>タップでコピー
+      </div>
+      <div class="generated-actions">
+        <button class="btn btn-green btn-sm" onclick="copyText(\`${safeText}\`)">📋 コピー</button>
+        <button class="btn btn-secondary btn-sm" onclick="generatePost('${safeItem}','${tone}','${genId}')">🔀 別パターン</button>
+        <button class="btn btn-primary btn-sm" onclick="saveToPostList('${safeSave}')">＋ 投稿リストに追加</button>
+      </div>
+    </div>`;
+}
+
+function copyText(text) { copyToClipboard(text); }
+
+// ============================================================
+// Save to Post List
+// ============================================================
+function saveToPostList(encodedData) {
+  const data = JSON.parse(decodeURIComponent(encodedData));
+  const midnightCount = State.posts.filter(p=>p.time==='midnight').length;
+  const post = {
+    id: Date.now(),
+    product: data.name,
+    url: data.url||'',
+    genre: data.genre,
+    time: midnightCount < 30 ? 'midnight' : 'noon',
+    text: data.text,
+    addedAt: State.todayKey,
+  };
+  State.posts.unshift(post);
+  savePosts();
+  updateHeaderStats();
+  showToast('✅ 投稿リストに追加しました！');
+}
+
+// ============================================================
+// Render Post List
+// ============================================================
+const GENRE_LABEL = {child:'👶 子育て',manga:'📚 漫画',interior:'🏠 インテリア',gadget:'✨ 便利グッズ'};
+const TIME_LABEL  = {midnight:'🌙 深夜0時',noon:'☀️ 昼12時'};
+
+function filterPosts(filter, el) {
+  State.currentFilter = filter;
+  document.querySelectorAll('#postFilter .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderPostList();
+}
+
+function renderPostList() {
+  updateProgress();
+  let list = State.posts;
+  const f = State.currentFilter;
+  if (f==='midnight') list=list.filter(p=>p.time==='midnight');
+  else if(f==='noon') list=list.filter(p=>p.time==='noon');
+  else if(f==='undone') list=list.filter(p=>!State.done.has(p.id));
+  else if(['child','manga','interior','gadget'].includes(f)) list=list.filter(p=>p.genre===f);
+
+  if (!list.length) {
+    document.getElementById('postList').innerHTML=`
+      <div class="empty-state">
+        <div class="icon">${f==='undone'?'🎉':'📋'}</div>
+        <p>${f==='undone'?'すべての投稿が完了しています！':'ランキング・検索タブで商品を探して<br>「投稿リストに追加」してください'}</p>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('postList').innerHTML = list.map((p,idx)=>{
+    const done  = State.done.has(p.id);
+    const isNew = p.addedAt===State.todayKey && idx<3;
+    const safeText = p.text.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+    return `
+    <div class="post-card${done?' done':''}" id="pcard-${p.id}" style="animation-delay:${idx*0.03}s">
+      <div class="post-card-header">
+        <span class="post-no">#${idx+1}</span>
+        <span class="badge badge-${p.time}">${TIME_LABEL[p.time]}</span>
+        <span class="badge badge-${p.genre}">${GENRE_LABEL[p.genre]}</span>
+        ${isNew?'<span class="badge badge-new">NEW</span>':''}
+      </div>
+      <div class="post-card-body">
+        <div class="post-product-name">${p.product}</div>
+        <div class="post-text-area" onclick="copyText(\`${safeText}\`)">${p.text}</div>
+        <div class="copy-hint">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          タップでコピー（投稿文＋ハッシュタグ）
+        </div>
+      </div>
+      <div class="post-card-footer">
+        <a href="${p.url||'#'}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="text-decoration:none;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          楽天で見る
+        </a>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="removePost(${p.id})">🗑</button>
+          <button class="check-btn${done?' done':''}" onclick="toggleDone(${p.id})" id="cbtn-${p.id}">
+            <span class="check-icon">${done?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':''}</span>
+            ${done?'投稿済み':'投稿済みにする'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// Post List Actions
+// ============================================================
+function toggleDone(id) {
+  if (State.done.has(id)) State.done.delete(id); else State.done.add(id);
+  saveDone(); updateProgress(); updateHeaderStats();
+  const done=State.done.has(id);
+  const card=document.getElementById('pcard-'+id);
+  if (card) card.classList.toggle('done',done);
+  const btn=document.getElementById('cbtn-'+id);
+  if (btn) {
+    btn.className='check-btn'+(done?' done':'');
+    btn.innerHTML=`<span class="check-icon">${done?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':''}</span>${done?'投稿済み':'投稿済みにする'}`;
+  }
+  if (State.currentFilter==='undone') renderPostList();
+}
+function removePost(id) {
+  State.posts=State.posts.filter(p=>p.id!==id); State.done.delete(id);
+  savePosts(); saveDone(); renderPostList();
+}
+function shufflePosts() {
+  State.posts=State.posts.sort(()=>Math.random()-0.5);
+  savePosts(); renderPostList(); showToast('🔀 シャッフルしました');
+}
+function resetAllDone() {
+  if (!confirm('投稿済みチェックをすべてリセットしますか？')) return;
+  State.done.clear(); saveDone(); renderPostList(); updateHeaderStats(); showToast('↩ リセットしました');
+}
+function exportPosts() {
+  const text=State.posts.map((p,i)=>`【${i+1}】${TIME_LABEL[p.time]} ${GENRE_LABEL[p.genre]}\n商品：${p.product}\n\n${p.text}\n\n---`).join('\n\n');
+  copyToClipboard(text); showToast('📤 全投稿をコピーしました');
+}
+
+// ============================================================
+// Progress & Stats
+// ============================================================
+function updateProgress() {
+  const total=State.posts.length;
+  const done=State.posts.filter(p=>State.done.has(p.id)).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('progressCount').textContent=`${done} / ${total}`;
+  document.getElementById('progressFill').style.width=pct+'%';
+  const mT=State.posts.filter(p=>p.time==='midnight').length;
+  const mD=State.posts.filter(p=>p.time==='midnight'&&State.done.has(p.id)).length;
+  const nT=State.posts.filter(p=>p.time==='noon').length;
+  const nD=State.posts.filter(p=>p.time==='noon'&&State.done.has(p.id)).length;
+  document.getElementById('miniMidnight').textContent=`${mD}/${mT}`;
+  document.getElementById('miniNoon').textContent=`${nD}/${nT}`;
+}
+function updateHeaderStats() {
+  const today=State.posts.filter(p=>State.done.has(p.id)&&p.addedAt===State.todayKey).length;
+  document.getElementById('stat-today').textContent=today;
+  document.getElementById('stat-total').textContent=State.done.size;
+}
+
+// ============================================================
+// Settings
+// ============================================================
+function updateHashtagCount(v) { State.settings.hashtagCount=Number(v); document.getElementById('hashtagCountVal').textContent=v; saveSettings(); }
+function updateDailyGoal(v)    { State.settings.dailyGoal=Number(v);    document.getElementById('dailyGoalVal').textContent=v;    saveSettings(); }
+function syncSettings() {
+  document.getElementById('settingsApiVal').textContent = State.apiId ? State.apiId.slice(0,8)+'...' : '未設定';
+  document.getElementById('settingsApiInput').value = State.apiId;
+  document.getElementById('hashtagCount').value = State.settings.hashtagCount;
+  document.getElementById('hashtagCountVal').textContent = State.settings.hashtagCount;
+  document.getElementById('dailyGoal').value = State.settings.dailyGoal;
+  document.getElementById('dailyGoalVal').textContent = State.settings.dailyGoal;
+  document.getElementById('savedPostCount').textContent = State.posts.length+' 件';
+}
+function clearDoneData()  { if(!confirm('投稿済みデータをリセットしますか？')) return; State.done.clear(); saveDone(); updateHeaderStats(); showToast('リセットしました'); }
+function clearAllPosts()  { if(!confirm('生成済み投稿をすべて削除しますか？')) return; State.posts=[]; State.done.clear(); savePosts(); saveDone(); syncSettings(); updateHeaderStats(); showToast('クリアしました'); }
+
+// ============================================================
+// Clipboard
+// ============================================================
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(()=>showToast('📋 コピーしました！ROOMに貼り付けてください'))
+  .catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text; ta.style.cssText='position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('📋 コピーしました！ROOMに貼り付けてください');
+  });
+}
+
+// ============================================================
+// Toast
+// ============================================================
+let toastTimer;
+function showToast(msg, type) {
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=type==='warn'?'var(--accent)':'var(--green)';
+  t.style.color=type==='warn'?'#111':'#0f1f1a';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ============================================================
+// Init
+// ============================================================
+(function init() {
+  if (State.apiId) { document.getElementById('apiIdInput').value=State.apiId; updateApiStatus(); }
+  updateHeaderStats(); updateProgress();
+  document.getElementById('hashtagCount').value=State.settings.hashtagCount;
+  document.getElementById('dailyGoal').value=State.settings.dailyGoal;
+})();
+</script>
+</body>
+</html>
