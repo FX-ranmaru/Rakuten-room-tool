@@ -166,8 +166,8 @@ select.inp{cursor:pointer;}
 <!-- SETTINGS -->
 <div class="settings-panel">
   <div class="settings-row">
-    <span class="settings-label">楽天 API ID</span>
-    <input class="settings-inp" type="text" id="apiKeyInput" placeholder="applicationId を入力">
+    <span class="settings-label">GAS URL</span>
+    <input class="settings-inp" type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/...">
     <button class="btn-save" onclick="saveSettings()">保存</button>
   </div>
   <div class="settings-row">
@@ -326,21 +326,20 @@ const GENRE_KEYWORDS = {
 /* ================================================
    State
    ================================================ */
-let apiKey      = localStorage.getItem('room_api_key') || '';
+let gasUrl      = localStorage.getItem('room_gas_url') || '';
 let affiliateId = localStorage.getItem('room_affiliate_id') || '';
 let doneSet     = new Set(JSON.parse(localStorage.getItem('room_done') || '[]'));
-let postItems   = []; // 取得した商品リスト（最大100件）
+let postItems   = [];
 let currentFilter = 'all';
 let listTone    = 'used';
 let searchTone  = 'used';
 let resultTones = {};
-let _cbCount    = 0;
 
 /* ================================================
    Init
    ================================================ */
 function init() {
-  document.getElementById('apiKeyInput').value    = apiKey;
+  document.getElementById('gasUrlInput').value    = gasUrl;
   document.getElementById('affiliateInput').value = affiliateId;
   updateStatus();
   document.getElementById('searchKeyword').addEventListener('keydown', e => {
@@ -352,17 +351,17 @@ function init() {
    Settings
    ================================================ */
 function saveSettings() {
-  apiKey      = document.getElementById('apiKeyInput').value.trim();
+  gasUrl      = document.getElementById('gasUrlInput').value.trim();
   affiliateId = document.getElementById('affiliateInput').value.trim();
-  localStorage.setItem('room_api_key', apiKey);
+  localStorage.setItem('room_gas_url', gasUrl);
   localStorage.setItem('room_affiliate_id', affiliateId);
   updateStatus();
   showToast('✅ 設定を保存しました');
 }
 function updateStatus() {
   document.getElementById('settingsStatus').innerHTML = [
-    apiKey      ? '<span class="sbadge s-ok">✅ API設定済み</span>'
-                : '<span class="sbadge s-ng">⚠ API未設定</span>',
+    gasUrl      ? '<span class="sbadge s-ok">✅ GAS URL設定済み</span>'
+                : '<span class="sbadge s-ng">⚠ GAS URL未設定</span>',
     affiliateId ? '<span class="sbadge s-ok">✅ アフィリエイトID設定済み</span>'
                 : '<span class="sbadge s-ng">⚠ アフィリエイトID未設定（報酬が入りません）</span>',
   ].join('');
@@ -413,46 +412,20 @@ function setFilter(key, btn) {
 }
 
 /* ================================================
-   楽天 API（JSONP）
+   GAS経由でAPIを呼び出す（CORS回避）
    ================================================ */
-function callRakutenAPI(endpoint, params) {
-  return new Promise((resolve, reject) => {
-    if (!apiKey) {
-      showToast('⚠ APIキーを設定・保存してください');
-      reject(new Error('no_key'));
-      return;
-    }
-    const n   = ++_cbCount;
-    const cb  = '_rc' + n;
-    const sid = '_rs' + n;
-    const qs  = new URLSearchParams({
-      applicationId: apiKey,
-      format: 'json',
-      formatVersion: '2',
-      callback: cb,
-      ...params,
-    });
-    // 新ドメイン対応：ランキングAPIは専用サブドメインを使用
-    const domainMap = {
-      'IchibaItem/Ranking': 'https://openapi.rakuten.co.jp/ichibaranking/api',
-    };
-    const baseDomain = Object.entries(domainMap).find(([k]) => endpoint.startsWith(k))?.[1]
-      || 'https://openapi.rakuten.co.jp/ichibams/api';
-    const url = `${baseDomain}/${endpoint}?${qs}`;
-
-    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 15000);
-    function cleanup() { delete window[cb]; document.getElementById(sid)?.remove(); }
-
-    window[cb] = data => {
-      clearTimeout(timer); cleanup();
-      data.error ? reject(new Error(data.error + (data.error_description ? ': ' + data.error_description : ''))) : resolve(data);
-    };
-
-    const s = document.createElement('script');
-    s.id = sid; s.src = url;
-    s.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('network_error')); };
-    document.head.appendChild(s);
-  });
+async function callAPI(params) {
+  if (!gasUrl) {
+    showToast('⚠ GAS URLを設定・保存してください');
+    throw new Error('no_gas_url');
+  }
+  const qs  = new URLSearchParams(params);
+  const url = `${gasUrl}?${qs}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error + (data.error_description ? ': ' + data.error_description : ''));
+  return data;
 }
 
 /* ================================================
@@ -460,11 +433,11 @@ function callRakutenAPI(endpoint, params) {
    ================================================ */
 function errMsg(e) {
   const m = e.message || '';
-  if (m === 'no_key')           return 'APIキーを設定・保存してください。';
-  if (m === 'timeout')          return '通信タイムアウト。再度お試しください。';
-  if (m === 'network_error')    return 'ネットワークエラー。接続を確認してください。';
-  if (m.includes('wrong_parameter')) return 'APIキーが正しくありません。再確認してください。';
-  if (m.includes('too_many'))   return 'リクエスト上限中です。しばらく待ってから再試行してください。';
+  if (m === 'no_gas_url')        return 'GAS URLを設定・保存してください。';
+  if (m === 'timeout')           return '通信タイムアウト。再度お試しください。';
+  if (m === 'network_error')     return 'ネットワークエラー。GAS URLを確認してください。';
+  if (m.includes('wrong_parameter')) return 'APIキーが正しくありません。GASのコードを確認してください。';
+  if (m.includes('too_many'))    return 'リクエスト上限中です。しばらく待ってから再試行してください。';
   return m || '不明なエラーが発生しました。';
 }
 function renderError(e, container) {
@@ -487,8 +460,6 @@ function guessGenre(name) {
    ページング：hits=30 を page=1〜4 で取得 → 最大100件
    ================================================ */
 async function fetchPostList() {
-  if (!apiKey) { showToast('⚠ APIキーを設定・保存してください'); return; }
-
   const genreId = document.getElementById('listGenre').value;
   const sort    = document.getElementById('listSort').value;
   const btn     = document.getElementById('fetchListBtn');
@@ -507,7 +478,7 @@ async function fetchPostList() {
     const allItems = [];
     for (const page of pages) {
       try {
-        const data = await callRakutenAPI('IchibaItem/Search/20220601', { ...params, page });
+        const data = await callAPI({ sort, hits: 30, page, minReviewCount: 5, ...(genreId ? {genreId} : {}) });
         if (data.Items && data.Items.length) {
           allItems.push(...data.Items);
         }
@@ -706,7 +677,7 @@ async function fetchSearch() {
   const params = { keyword, sort: '-reviewCount', hits: 10 };
   if (genreId) params.genreId = genreId;
   try {
-    const data = await callRakutenAPI('IchibaItem/Search/20220601', params);
+    const data = await callAPI(params);
     if (!data.Items || !data.Items.length) {
       results.innerHTML = '<div class="empty">商品が見つかりませんでした</div>';
       return;
