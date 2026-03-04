@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>楽天ROOM 投稿ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f4f0;--card:#fff;--primary:#e63b2e;--primary-light:#fff0ef;--midnight:#1e2a4a;--midnight-light:#eef1f8;--noon:#d97706;--noon-light:#fef9ee;--manga:#8b5cf6;--manga-light:#f5f3ff;--interior:#10b981;--interior-light:#ecfdf5;--text:#1a1a1a;--text-sub:#6b7280;--border:#e5e7eb;--done-bg:#d1fae5;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.07)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
+.header{background:var(--primary);color:white;padding:20px 16px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(230,59,46,0.3)}
+.header h1{font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700}
+.header p{font-size:11px;opacity:.85;margin-top:2px}
+.progress-wrap{background:rgba(255,255,255,0.2);border-radius:99px;height:6px;overflow:hidden;margin-top:12px}
+.progress-bar{background:white;height:100%;border-radius:99px;transition:width .4s}
+.progress-text{font-size:11px;opacity:.9;margin-top:6px;text-align:right}
+.tabs{display:flex;gap:8px;padding:14px 16px 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:7px 14px;border-radius:99px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:var(--card);color:var(--text-sub);box-shadow:var(--shadow);transition:all .2s}
+.tab.active{background:var(--primary);color:white}
+.counters{display:flex;gap:10px;padding:12px 16px 0}
+.counter-card{flex:1;background:var(--card);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px}
+.counter-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.counter-card .label{font-size:11px;color:var(--text-sub)}
+.counter-card .count{font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif}
+.list{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.post-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.post-card.done{opacity:.55}
+.post-card.done .card-body{background:var(--done-bg)}
+.card-header{display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid var(--border)}
+.card-no{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--text-sub);min-width:26px}
+.time-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;flex-shrink:0}
+.time-midnight{background:var(--midnight-light);color:var(--midnight)}
+.time-noon{background:var(--noon-light);color:var(--noon)}
+.genre-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;flex-shrink:0}
+.genre-manga{background:var(--manga-light);color:var(--manga)}
+.genre-interior{background:var(--interior-light);color:var(--interior)}
+.card-body{padding:12px 14px;transition:background .3s}
+.product-name{font-size:14px;font-weight:700;margin-bottom:8px;line-height:1.4}
+.link-btn{display:flex;align-items:center;gap:6px;background:var(--primary-light);color:var(--primary);text-decoration:none;font-size:12px;font-weight:600;padding:8px 12px;border-radius:10px;margin-bottom:10px}
+.link-btn:active{background:#ffd9d7}
+.copy-area{background:#fafafa;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-all;cursor:pointer;transition:border-color .2s,background .2s}
+.copy-area:active{background:#eff6ff;border-color:#93c5fd}
+.copy-hint{font-size:11px;color:var(--text-sub);margin-top:6px;display:flex;align-items:center;gap:4px}
+.check-row{margin-top:10px;display:flex;justify-content:flex-end}
+.check-btn{display:flex;align-items:center;gap:6px;background:#f3f4f6;color:var(--text-sub);border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .2s}
+.check-btn.checked{background:#d1fae5;color:#065f46}
+.check-icon{width:18px;height:18px;border:2px solid currentColor;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.check-btn.checked .check-icon{background:#10b981;border-color:#10b981;color:white}
+.empty{text-align:center;padding:40px 20px;color:var(--text-sub);font-size:14px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:#111;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>楽天ROOM 投稿ツール</h1>
+  <p>漫画・インテリア特化｜100件</p>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-text" id="progressText">0 / 100 件投稿済み</div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="filterTab('all',this)">すべて</button>
+  <button class="tab" onclick="filterTab('undone',this)">未投稿のみ</button>
+  <button class="tab" onclick="filterTab('midnight',this)">🌙 深夜</button>
+  <button class="tab" onclick="filterTab('noon',this)">☀️ 昼</button>
+  <button class="tab" onclick="filterTab('manga',this)">📚 漫画</button>
+  <button class="tab" onclick="filterTab('interior',this)">🏠 インテリア</button>
+</div>
+<div class="counters">
+  <div class="counter-card"><div class="counter-dot" style="background:var(--midnight)"></div><div><div class="label">深夜0時</div><div class="count" id="cnt-midnight">0/50</div></div></div>
+  <div class="counter-card"><div class="counter-dot" style="background:var(--noon)"></div><div><div class="label">昼12時</div><div class="count" id="cnt-noon">0/50</div></div></div>
+  <div class="counter-card"><div class="counter-dot" style="background:var(--primary)"></div><div><div class="label">合計</div><div class="count" id="cnt-total">0/100</div></div></div>
+</div>
+<div class="list" id="list"></div>
+<div class="toast" id="toast">✅ コピーしました！ROOMに貼り付けてください</div>
+<script>
+const posts=[
+{no:1,time:"midnight",genre:"manga",product:"鬼滅の刃 コミック 全巻セット",text:"社会現象になったあの名作、まだ読んでいないなら今すぐ！😭 泣けて感動できてアクションも最高。全巻一気読みしたら止まらなくなります。楽天なら全巻セットでお得に♪\n\n#鬼滅の刃 #漫画 #コミック #アニメ #楽天ROOM"},
+{no:2,time:"midnight",genre:"manga",product:"ワンピース 最新刊 コミック",text:"ついに終盤突入！今から追いかけても全然間に合います🏴‍☠️ 楽天で最新刊チェックしながら過去巻もまとめ買いがおすすめ✨ 読み始めたら止まらない伝説の漫画。\n\n#ワンピース #ONE_PIECE #漫画 #コミック #楽天ROOM"},
+{no:3,time:"midnight",genre:"manga",product:"呪術廻戦 コミック",text:"アニメも大人気の呪術廻戦📚 独特の世界観とバトルシーンが最高すぎる！ハマると沼なので覚悟して読んでください笑 コミックで手元に置いておきたい作品。\n\n#呪術廻戦 #漫画 #コミック #アニメ好き #楽天ROOM"},
+{no:4,time:"midnight",genre:"manga",product:"進撃の巨人 コミック 完結 全巻",text:"完結済みだから一気読みができる！🔥 衝撃のストーリーと伏線回収に震えた名作。全巻揃えて手元に置きたい不朽の名作。アニメも見たけど漫画の感動は格別✨\n\n#進撃の巨人 #漫画 #コミック #完結 #楽天ROOM"},
+{no:5,time:"midnight",genre:"manga",product:"チェンソーマン コミック",text:"独特の世界観と予測不能なストーリーにドはまり中📖 絵のタッチも個性的でクセになる！アニメとあわせて楽しんでほしい。読み返すたびに新しい発見がある深い作品。\n\n#チェンソーマン #漫画 #コミック #アニメ #楽天ROOM"},
+{no:6,time:"midnight",genre:"manga",product:"葬送のフリーレン コミック",text:"アニメ化で話題沸騰中🌟 魔王を倒した後の世界を描く異色のファンタジー。テンポがゆったりしているのに読み始めると止まらない不思議な魅力✨ 感動したい人におすすめ。\n\n#葬送のフリーレン #フリーレン #漫画 #コミック #楽天ROOM"},
+{no:7,time:"midnight",genre:"manga",product:"ダンジョン飯 コミック 完結 全巻",text:"完結済みで一気読みできる！🐉 ダンジョンの魔物を料理して食べるぶっ飛んだ設定なのにめちゃくちゃ面白い。グルメ漫画としても冒険譚としても最高！\n\n#ダンジョン飯 #漫画 #コミック #ファンタジー #楽天ROOM"},
+{no:8,time:"midnight",genre:"manga",product:"SPY×FAMILY スパイファミリー コミック",text:"家族全員で楽しめるハートフルスパイ漫画🕵️ アーニャが可愛すぎてメロメロ🥰 ストーリーも笑えて感動できてバランス最高！子どもから大人まで読める名作。\n\n#スパイファミリー #SPY_FAMILY #漫画 #アニメ #楽天ROOM"},
+{no:9,time:"midnight",genre:"manga",product:"推しの子 コミック",text:"芸能界の裏側を描いたダークな展開が衝撃的📺 アニメのOPが話題になったけど漫画の方がさらに詳しく楽しめます✨ 感情移入しすぎて涙が止まらないシーンも多数。\n\n#推しの子 #漫画 #コミック #アニメ #楽天ROOM"},
+{no:10,time:"midnight",genre:"manga",product:"ブルーロック コミック",text:"サッカー漫画の常識を覆す問題作🔵 エゴイストが最強のストライカーを目指すというコンセプトが斬新！スポーツ漫画好きなら絶対読んで！\n\n#ブルーロック #漫画 #コミック #サッカー #楽天ROOM"},
+{no:11,time:"midnight",genre:"manga",product:"僕のヒーローアカデミア コミック",text:"個性あふれるキャラクターたちが熱い！🦸 友情・努力・勝利の王道少年漫画の最高峰。長期連載だから読み応え抜群！楽天でまとめ買いがお得です。\n\n#僕のヒーローアカデミア #ヒロアカ #漫画 #コミック #楽天ROOM"},
+{no:12,time:"midnight",genre:"manga",product:"東京卍リベンジャーズ コミック 完結",text:"タイムリープ×不良という異色の設定がクセになる！完結済みなので一気読みできます📚 アニメも人気で映画化もされた話題作。ハラハラドキドキが止まらない！\n\n#東京卍リベンジャーズ #漫画 #コミック #完結 #楽天ROOM"},
+{no:13,time:"midnight",genre:"manga",product:"転生したらスライムだった件 コミック",text:"異世界転生の定番にして最高傑作のひとつ🌟 主人公がスライムというぶっ飛んだ設定なのに読むと超面白い！アニメも見てるけど漫画でさらに細かく楽しめる。\n\n#転スラ #転生したらスライムだった件 #漫画 #異世界 #楽天ROOM"},
+{no:14,time:"midnight",genre:"manga",product:"薬屋のひとりごと コミック",text:"中華風ファンタジーミステリーが最高に面白い！🌸 主人公の猫猫がクールで賢くてかっこいい。謎解きが面白くてページをめくる手が止まらない！アニメ化で更に注目度アップ。\n\n#薬屋のひとりごと #漫画 #コミック #ファンタジー #楽天ROOM"},
+{no:15,time:"midnight",genre:"manga",product:"怪獣8号 コミック",text:"怪獣が当たり前の世界で戦う主人公がかっこよすぎる！🦖 少年漫画の熱さと大人向けの深みが両立した傑作。アニメも超話題になった今イチオシの漫画。\n\n#怪獣8号 #漫画 #コミック #アニメ #楽天ROOM"},
+{no:16,time:"midnight",genre:"manga",product:"キングダム コミック",text:"中国春秋戦国時代を舞台にした超大作📚 熱くて壮大なスケールに圧倒される！歴史好きにも漫画好きにも絶対おすすめ。一度読み始めたら止まれない中毒性あり。\n\n#キングダム #漫画 #コミック #歴史漫画 #楽天ROOM"},
+{no:17,time:"midnight",genre:"manga",product:"スラムダンク コミック 完結",text:"バスケ漫画の永遠の名作！完結済みで一気読みできます🏀 何度読んでも熱くなれる不朽の名作。映画THE FIRST SLAM DUNKを見てから読み返したくなった！\n\n#スラムダンク #SLAMDUNK #漫画 #バスケ #楽天ROOM"},
+{no:18,time:"midnight",genre:"manga",product:"ハイキュー コミック 完結 全巻",text:"完結済みのバレー漫画の金字塔🏐 チームで戦う熱さと個性豊かなキャラクターに夢中！青春の輝きを感じさせてくれる大好きな作品。全巻一気読みで号泣確定です。\n\n#ハイキュー #漫画 #コミック #バレー #楽天ROOM"},
+{no:19,time:"midnight",genre:"manga",product:"鋼の錬金術師 コミック 完結 全巻",text:"完結済みの不朽の名作📚 壮大な世界観と感動的なストーリーに何度読んでも泣ける！錬金術という設定の面白さと兄弟の絆が心に刺さります。漫画の教科書的存在。\n\n#鋼の錬金術師 #ハガレン #漫画 #完結 #楽天ROOM"},
+{no:20,time:"midnight",genre:"manga",product:"HUNTER×HUNTER コミック",text:"天才・冨樫先生の最高傑作！ストーリーの深さと伏線の張り方が神レベル🏆 休載が多くても待ち続ける価値がある漫画。今から読んでもまだ間に合います！\n\n#HUNTERHUNTER #ハンターハンター #漫画 #コミック #楽天ROOM"},
+{no:21,time:"midnight",genre:"manga",product:"約束のネバーランド コミック 完結",text:"完結済みサスペンス漫画の傑作！👁️ 序盤の衝撃展開から目が離せない。頭脳戦と心理戦が絡み合うストーリーは漫画史に残る名作。一気読みしたら確実に後悔しない。\n\n#約束のネバーランド #漫画 #コミック #完結 #楽天ROOM"},
+{no:22,time:"midnight",genre:"manga",product:"かぐや様は告らせたい コミック 完結",text:"天才ふたりが告白させようと駆け引きする頭脳戦ラブコメ💡 笑えて萌えてたまに感動できる完璧なラブコメ漫画。完結済みなので最後まで安心して読めます！\n\n#かぐや様は告らせたい #漫画 #ラブコメ #完結 #楽天ROOM"},
+{no:23,time:"midnight",genre:"manga",product:"五等分の花嫁 コミック 完結",text:"5人の姉妹との恋愛が展開する王道ラブコメ💕 完結済みで答えが出ているから安心して楽しめます！どのヒロインも個性的で魅力的。アニメと合わせて楽しむのもおすすめ。\n\n#五等分の花嫁 #漫画 #ラブコメ #完結 #楽天ROOM"},
+{no:24,time:"midnight",genre:"manga",product:"銀魂 コミック 全巻",text:"ギャグあり感動あり熱いバトルありの最強エンタメ漫画🎮 何度読んでも笑えて泣ける！全巻揃えて手元に置いておきたい大好きな作品。ギャグシーンのセンスが天才的。\n\n#銀魂 #漫画 #コミック #ギャグ漫画 #楽天ROOM"},
+{no:25,time:"midnight",genre:"manga",product:"アニメ フィギュア 推し活 グッズ",text:"好きなキャラクターのフィギュアをコレクションするのが最近のマイブーム✨ 楽天で探すと限定品やレア商品も見つかることが！推しのグッズで部屋をデコレーションしよう🌟\n\n#フィギュア #アニメグッズ #推し活 #コレクション #楽天ROOM"},
+{no:26,time:"midnight",genre:"interior",product:"ソファ 2人掛け ファブリック おしゃれ",text:"リビングの主役になるおしゃれなソファをついにお迎え🛋️ ファブリック素材で柔らかくて座り心地抜群！2人掛けサイズがコンパクトな部屋にもちょうど良いです✨\n\n#ソファ #インテリア #リビング #おしゃれインテリア #楽天ROOM"},
+{no:27,time:"midnight",genre:"interior",product:"ローテーブル 折りたたみ 木製 北欧",text:"使わないときは折りたたんでスッキリ収納できる優秀テーブル✨ 木製の温かみのあるデザインが部屋を北欧風に演出してくれます🌿 1人暮らしにも最適サイズ！\n\n#ローテーブル #折りたたみテーブル #北欧インテリア #一人暮らし #楽天ROOM"},
+{no:28,time:"midnight",genre:"interior",product:"ラグ 洗える 北欧 おしゃれ",text:"洗えるラグに変えてから清潔感が全然違う！🌿 北欧デザインがリビングをおしゃれに格上げしてくれます✨ 子どもやペットがいる家庭にも安心のウォッシャブル素材。\n\n#ラグ #洗えるラグ #北欧インテリア #リビング #楽天ROOM"},
+{no:29,time:"midnight",genre:"interior",product:"カーテン 遮光 1級 おしゃれ オーダー",text:"遮光1級カーテンに変えてから朝の目覚めが劇的に改善🌙 オーダーサイズで窓にぴったりフィット！デザインも豊富でインテリアに合わせて選べるのが嬉しい✨\n\n#カーテン #遮光カーテン #インテリア #オーダーカーテン #楽天ROOM"},
+{no:30,time:"midnight",genre:"interior",product:"照明 おしゃれ 北欧 ペンダントライト",text:"天井の照明をペンダントライトに変えるだけで部屋の雰囲気が激変✨ 北欧テイストのデザインがどんな部屋にもなじみます🌿 インテリア変えたい人はまず照明から！\n\n#ペンダントライト #照明 #北欧インテリア #インテリア照明 #楽天ROOM"},
+{no:31,time:"midnight",genre:"interior",product:"壁掛け時計 シンプル 北欧 おしゃれ",text:"壁に掛けるだけでお部屋がグッとおしゃれになる✨ シンプルデザインでどんなインテリアにも合わせやすい！音がしないスイープ式だから寝室にも置けます🕐\n\n#壁掛け時計 #時計 #北欧インテリア #おしゃれインテリア #楽天ROOM"},
+{no:32,time:"midnight",genre:"interior",product:"収納ボックス フタ付き スタッキング",text:"フタ付きでほこりが入らない清潔な収納ボックス📦 スタッキングできるから縦に積み重ねてスペースを有効活用！クローゼットや押し入れの整理整頓に大活躍です。\n\n#収納ボックス #収納 #整理整頓 #クローゼット収納 #楽天ROOM"},
+{no:33,time:"midnight",genre:"interior",product:"山崎実業 tower シリーズ キッチン収納",text:"山崎実業のtowerシリーズでキッチンが劇的に変わった！🏠 無駄なスペースを活かした収納アイデアが神すぎる✨ シンプルなデザインが生活感を隠してくれます。\n\n#山崎実業 #tower #キッチン収納 #収納グッズ #楽天ROOM"},
+{no:34,time:"midnight",genre:"interior",product:"突っ張り棒 強力 おしゃれ 収納",text:"賃貸でも壁に穴を開けずに収納スペースが作れる！💪 強力タイプだから重いものも安心して掛けられます。使い方次第で収納力が格段にアップするコスパ最強グッズ。\n\n#突っ張り棒 #収納 #賃貸インテリア #DIY収納 #楽天ROOM"},
+{no:35,time:"midnight",genre:"interior",product:"観葉植物 フェイクグリーン 大型 インテリア",text:"フェイクグリーンなのにリアルすぎてお客さんに本物と間違われた🌿 水やり不要でいつでも綺麗！殺風景な部屋の角に置くだけで一気にオシャレになります✨\n\n#フェイクグリーン #観葉植物 #インテリアグリーン #部屋作り #楽天ROOM"},
+{no:36,time:"midnight",genre:"interior",product:"ミラー 全身 おしゃれ スタンドミラー",text:"全身を確認できるスタンドミラーをお迎え✨ 鏡があるだけで部屋が広く明るく見える！スリムなデザインだから場所を取らずにどこにでも置けます。おしゃれ見えにも◎\n\n#スタンドミラー #全身鏡 #ミラー #インテリア #楽天ROOM"},
+{no:37,time:"midnight",genre:"interior",product:"デスク 折りたたみ テレワーク コンパクト",text:"テレワーク用にコンパクトな折りたたみデスクを導入✨ 使わないときはたたんで壁に立てかけられるから場所を取らない！一人暮らしや狭い部屋にも最適です。\n\n#折りたたみデスク #テレワーク #在宅ワーク #デスク #楽天ROOM"},
+{no:38,time:"midnight",genre:"interior",product:"チェア デスクチェア おしゃれ テレワーク",text:"テレワーク用のチェアを変えたら腰への負担が全然違う！🪑 おしゃれなデザインで部屋のインテリアとしても◎ 長時間座っても疲れにくい設計に感動しました。\n\n#デスクチェア #チェア #テレワーク #在宅ワーク #楽天ROOM"},
+{no:39,time:"midnight",genre:"interior",product:"シェルフ 本棚 スチール おしゃれ",text:"スチール製のシェルフで収納力と見た目を両立✨ 本だけでなく雑貨や植物を飾ってディスプレイ収納に！オープン棚だから部屋が広く見えるのもポイント🌿\n\n#シェルフ #本棚 #収納 #おしゃれインテリア #楽天ROOM"},
+{no:40,time:"midnight",genre:"interior",product:"アロマディフューザー 超音波 おしゃれ",text:"お気に入りのアロマで部屋を満たすリラックスタイム🌸 超音波式だから熱を使わず安全！インテリアとしてもおしゃれで、スイッチを入れるだけで気分が切り替わります✨\n\n#アロマディフューザー #アロマ #リラックス #インテリア雑貨 #楽天ROOM"},
+{no:41,time:"midnight",genre:"interior",product:"クッション カバー 北欧 おしゃれ",text:"クッションカバーを変えるだけでソファ周りが一気におしゃれになった✨ 北欧テイストのデザインが豊富で選ぶのが楽しい！洗濯できるから清潔に使えるのも嬉しい。\n\n#クッションカバー #クッション #北欧インテリア #ソファ #楽天ROOM"},
+{no:42,time:"midnight",genre:"interior",product:"間接照明 LED テーブルランプ おしゃれ",text:"間接照明を取り入れてから夜のリビングが格段におしゃれになった🌙 柔らかい光で部屋がリラックス空間に変身！コンセントに差すだけの手軽さも◎\n\n#間接照明 #テーブルランプ #LED照明 #おしゃれインテリア #楽天ROOM"},
+{no:43,time:"midnight",genre:"interior",product:"布団カバー 綿100 おしゃれ 北欧",text:"綿100%の布団カバーに変えてから寝心地が全然違う！😴 北欧デザインでベッドルームがホテルみたいにおしゃれに✨ 肌触りが良くて一年中使えるのが気に入ってます。\n\n#布団カバー #寝具 #綿100 #北欧インテリア #楽天ROOM"},
+{no:44,time:"midnight",genre:"interior",product:"ウォールシェルフ 壁掛け 棚 DIY",text:"壁に飾り棚を付けたら部屋のデッドスペースが一気におしゃれな飾り場所に変身✨ 本や小物を並べてディスプレイするのが楽しくなりました🌿 賃貸でも設置できるタイプあり！\n\n#ウォールシェルフ #壁掛け棚 #DIYインテリア #飾り棚 #楽天ROOM"},
+{no:45,time:"midnight",genre:"interior",product:"フロアランプ スタンドライト おしゃれ",text:"フロアランプを置くだけで部屋のコーナーが一気にサロン風に✨ 角度調節できるタイプなら読書にもテレビ鑑賞にも使える万能ライト🌙 インテリア好きは絶対好き！\n\n#フロアランプ #スタンドライト #照明 #おしゃれインテリア #楽天ROOM"},
+{no:46,time:"midnight",genre:"interior",product:"ベッドサイドテーブル ナイトテーブル 木製",text:"ベッドの横にナイトテーブルを置くだけで寝室がホテルライクに変身🏨 スマホや本を置けて夜の充電もスマートに。木製の温かみが就寝前のリラックスを助けてくれます。\n\n#ナイトテーブル #ベッドサイドテーブル #寝室インテリア #ベッドルーム #楽天ROOM"},
+{no:47,time:"midnight",genre:"interior",product:"こたつ 正方形 おしゃれ 北欧",text:"冬の必需品こたつをおしゃれなデザインにアップデート🍂 北欧テイストのこたつなら出しっぱなしでもインテリアに馴染む！一度入ったら出られない幸せな季節到来✨\n\n#こたつ #北欧インテリア #冬インテリア #リビング #楽天ROOM"},
+{no:48,time:"midnight",genre:"interior",product:"暖簾 のれん おしゃれ 北欧 リネン",text:"リネンの暖簾をキッチンとリビングの境に掛けたら一気におしゃれ感がアップ✨ 存在感があるのに圧迫感がないのが不思議！日本の暮らしに北欧デザインが絶妙にマッチ🌿\n\n#暖簾 #のれん #北欧インテリア #リネン #楽天ROOM"},
+{no:49,time:"midnight",genre:"interior",product:"収納 引き出し ボックス チェスト",text:"引き出し式の収納ボックスで細々したものをスッキリ整理！📦 重ねて使えるから縦のスペースを有効活用できます。透明タイプなら中身が一目でわかって取り出しやすい◎\n\n#収納ボックス #引き出し収納 #整理整頓 #収納グッズ #楽天ROOM"},
+{no:50,time:"midnight",genre:"interior",product:"ウォールステッカー おしゃれ 北欧 植物",text:"壁に貼るだけで部屋の雰囲気がガラッと変わる！🌿 賃貸でも使えるウォールステッカーはインテリア好きの必須アイテム。剥がせるタイプなら何度でも模様替えを楽しめる✨\n\n#ウォールステッカー #壁紙 #北欧インテリア #賃貸インテリア #楽天ROOM"},
+{no:51,time:"noon",genre:"manga",product:"ナルト NARUTO コミック 完結 全巻",text:"忍者漫画の伝説的名作が完結済みで一気読みできる！🍃 友情と成長の王道ストーリーに何度読んでも熱くなります。感動のラストは涙なしでは読めない！\n\n#NARUTO #ナルト #漫画 #コミック #楽天ROOM"},
+{no:52,time:"noon",genre:"manga",product:"ドラゴンボール コミック 完結 全巻",text:"漫画文化を変えた伝説の作品！子どもの頃に読んだあの感動を大人になって再び体験できます🐉 全巻揃えて子どもに読ませたい親御さんにも人気の不朽の名作。\n\n#ドラゴンボール #DRAGONBALL #漫画 #完結 #楽天ROOM"},
+{no:53,time:"noon",genre:"manga",product:"BLEACH ブリーチ コミック 完結",text:"和風×死神というかっこいい世界観に惚れた！⚔️ 完結済みで一気読みができます。バトルシーンのかっこよさは漫画史上トップクラス！千年血戦篇のアニメも最高でした。\n\n#BLEACH #ブリーチ #漫画 #コミック #楽天ROOM"},
+{no:54,time:"noon",genre:"manga",product:"幽遊白書 コミック 完結 全巻",text:"冨樫先生の原点にして頂点！今読み返すと改めてその面白さに驚く📚 アニメのリメイク化も話題になりましたね。バトル漫画好きなら絶対外せない名作。\n\n#幽遊白書 #漫画 #コミック #完結 #楽天ROOM"},
+{no:55,time:"noon",genre:"manga",product:"七つの大罪 コミック 完結 全巻",text:"完結済みで一気読みできる中世ファンタジー漫画🔥 個性豊かな7人の罪人たちが繰り広げる壮大な冒険に胸が熱くなります！キャラクターみんなが魅力的で誰かしら推せる！\n\n#七つの大罪 #漫画 #コミック #ファンタジー #楽天ROOM"},
+{no:56,time:"noon",genre:"manga",product:"るろうに剣心 コミック 完結",text:"明治時代を舞台にした不朽の剣劇漫画⚔️ 実写映画シリーズで再注目！読んだことない人は今すぐ読んでほしい。剣心のかっこよさは時代を超えて輝いています✨\n\n#るろうに剣心 #漫画 #コミック #完結 #楽天ROOM"},
+{no:57,time:"noon",genre:"manga",product:"食戟のソーマ コミック 完結",text:"料理×バトルという最高の組み合わせ🍳 読んでいるとお腹が空いてくる美食漫画！主人公の成長と料理の対決が熱い。完結済みなので最後まで読み切れます！\n\n#食戟のソーマ #漫画 #料理漫画 #完結 #楽天ROOM"},
+{no:58,time:"noon",genre:"manga",product:"アオのハコ コミック",text:"青春バドミントン漫画がこんなにエモいなんて🏸 初々しいラブコメと部活の熱さが両立！読んでいると自分の青春時代を思い出してキュンとします✨\n\n#アオのハコ #漫画 #コミック #青春 #楽天ROOM"},
+{no:59,time:"noon",genre:"manga",product:"無職転生 コミック",text:"異世界転生ものの金字塔！真剣に生きることの大切さが伝わってくる作品📖 コミカライズも丁寧で原作の雰囲気をしっかり再現。アニメと並行して読むのもおすすめ。\n\n#無職転生 #漫画 #コミック #異世界転生 #楽天ROOM"},
+{no:60,time:"noon",genre:"manga",product:"東京卍リベンジャーズ グッズ アクスタ",text:"推しキャラのアクリルスタンドをデスクに飾って毎日テンションアップ⚡ 楽天では公式グッズからファングッズまで豊富に揃っている！推し活が捗りすぎて困ってます笑\n\n#東京リベンジャーズ #アクスタ #推し活 #アニメグッズ #楽天ROOM"},
+{no:61,time:"noon",genre:"manga",product:"漫画 収納 ボックス コミック 整理",text:"増えすぎた漫画の収納問題がこれで解決！📚 コミックサイズにぴったりの収納ボックスでスッキリ整理できました。背表紙が見えるタイプなら読みたい巻がすぐに見つかる◎\n\n#漫画収納 #コミック収納 #本棚 #収納グッズ #楽天ROOM"},
+{no:62,time:"noon",genre:"manga",product:"ブックスタンド 本立て おしゃれ 卓上",text:"漫画や本を立てて飾れるブックスタンドがインテリアになる✨ おしゃれなデザインを選べばデスクの上がサマになります。大切な漫画を見せる収納で飾るのが最近のトレンド！\n\n#ブックスタンド #本立て #漫画インテリア #本棚 #楽天ROOM"},
+{no:63,time:"noon",genre:"manga",product:"SPY×FAMILY グッズ ぬいぐるみ アーニャ",text:"アーニャのぬいぐるみが可愛すぎてお迎えしてしまった🥰 部屋に置いておくだけで癒やされる！公式グッズは品質も良くて大満足。推しのグッズで日常を豊かにしよう✨\n\n#スパイファミリー #アーニャ #ぬいぐるみ #アニメグッズ #楽天ROOM"},
+{no:64,time:"noon",genre:"manga",product:"漫画 ブックカバー おしゃれ 革",text:"大切な漫画を保護するおしゃれなブックカバー📖 革製のカバーをつけて読むと特別な読書体験になる！漫画好きへのプレゼントにも喜ばれます。カラーバリエーションも豊富✨\n\n#ブックカバー #漫画 #本好き #読書グッズ #楽天ROOM"},
+{no:65,time:"noon",genre:"manga",product:"ワンピース グッズ フィギュア ルフィ",text:"ルフィのフィギュアをコレクションに追加🏴‍☠️ 楽天では限定版や海外版など珍しいフィギュアも見つかることが！好きなシーンや技のポーズのフィギュアを集めるのが楽しい。\n\n#ワンピース #ルフィ #フィギュア #コレクション #楽天ROOM"},
+{no:66,time:"noon",genre:"manga",product:"呪術廻戦 グッズ キーホルダー ストラップ",text:"毎日使うカバンに推しキャラのキーホルダーを付けてテンションアップ⚡ 細部まで丁寧に作られた公式グッズはクオリティも高い！楽天でお気に入りのグッズを探してみよう。\n\n#呪術廻戦 #キーホルダー #推し活 #アニメグッズ #楽天ROOM"},
+{no:67,time:"noon",genre:"manga",product:"漫画 全巻セット 送料無料 まとめ買い",text:"楽天で漫画の全巻セットを買うのが最近の楽しみ📚 まとめ買いで送料無料になるのが嬉しい！気になっていた漫画を一気に揃えて週末に一気読みするのが最高の贅沢です。\n\n#漫画全巻 #まとめ買い #コミック #読書 #楽天ROOM"},
+{no:68,time:"noon",genre:"manga",product:"ハイキュー グッズ アクリルスタンド",text:"ハイキューキャラのアクスタをコレクション中🏐 試合シーンのポーズのアクスタが躍動感あって最高！楽天のコレクターショップでレアグッズが見つかることもあります✨\n\n#ハイキュー #アクスタ #アクリルスタンド #推し活 #楽天ROOM"},
+{no:69,time:"noon",genre:"manga",product:"漫画 読書 ブックライト LED 充電式",text:"夜の読書が捗るLEDブックライトが便利すぎる📖 充電式だからコードレスで使えて快適！薄くてコンパクトだから旅行にも持って行けます。漫画好きの読書環境を整えよう✨\n\n#ブックライト #読書 #漫画 #読書グッズ #楽天ROOM"},
+{no:70,time:"noon",genre:"manga",product:"鬼滅の刃 フィギュア グッズ コレクション",text:"鬼滅グッズをコレクションするのが止まらない🗡️ 楽天ならレアなフィギュアや限定グッズも見つかることが！推しキャラのグッズで部屋を飾るのが最近の楽しみです✨\n\n#鬼滅の刃 #フィギュア #アニメグッズ #コレクション #楽天ROOM"},
+{no:71,time:"noon",genre:"manga",product:"スラムダンク グッズ Tシャツ ユニフォーム",text:"THE FIRST SLAM DUNK映画を見てまたグッズが欲しくなってしまった🏀 ユニフォームデザインのTシャツを部屋着として着るのが密かなお気に入り！漫画愛が止まらない。\n\n#スラムダンク #SLAMDUNK #グッズ #漫画グッズ #楽天ROOM"},
+{no:72,time:"noon",genre:"manga",product:"鋼の錬金術師 グッズ ポスター アート",text:"ハガレンのアートポスターで部屋の壁をデコレーション✨ 名シーンのイラストをフレームに入れて飾るとアート作品みたい！好きな漫画で部屋をおしゃれに演出しよう🎨\n\n#ハガレン #鋼の錬金術師 #ポスター #アニメグッズ #楽天ROOM"},
+{no:73,time:"noon",genre:"manga",product:"進撃の巨人 グッズ マグカップ",text:"推しキャラのマグカップで毎日のコーヒータイムを特別に☕ 公式デザインのクオリティは流石！毎朝これで飲むだけで気分が上がります。大切に長く使いたいお気に入りグッズ✨\n\n#進撃の巨人 #マグカップ #推し活 #アニメグッズ #楽天ROOM"},
+{no:74,time:"noon",genre:"manga",product:"漫画 本棚 壁面 大容量 収納",text:"壁一面の本棚を導入したら漫画コレクションが映えるようになった📚 大容量タイプで増え続ける漫画も余裕で収納！本棚自体をインテリアの一部として見せる収納が好きです。\n\n#本棚 #壁面収納 #漫画収納 #本好き #楽天ROOM"},
+{no:75,time:"noon",genre:"manga",product:"葬送のフリーレン グッズ アクリルスタンド",text:"フリーレンのアクスタをお迎えしました🌟 精巧に作られたグッズはファンなら絶対に欲しくなる逸品！楽天でコレクション探しをするのが毎日の楽しみになっています✨\n\n#葬送のフリーレン #フリーレン #アクスタ #推し活 #楽天ROOM"},
+{no:76,time:"noon",genre:"interior",product:"高反発マットレス 三つ折り シングル",text:"三つ折りで収納も簡単✨ 高反発素材で腰をしっかりサポートしてくれるから朝の目覚めが変わった！敷布団代わりにもなるし来客用にも重宝します。コスパも申し分なし🌙\n\n#マットレス #高反発マットレス #睡眠 #寝具 #楽天ROOM"},
+{no:77,time:"noon",genre:"interior",product:"すのこベッド フレーム シングル 木製",text:"通気性バツグンのすのこ素材でカビが生えにくい！シンプルなデザインがどんな部屋にもなじみます🛏️ 組み立ても比較的かんたんで設置しやすいとレビューでも好評。\n\n#すのこベッド #ベッド #寝室インテリア #ナチュラルインテリア #楽天ROOM"},
+{no:78,time:"noon",genre:"interior",product:"ロールスクリーン 遮光 つっぱり オーダー",text:"工事不要のつっぱりタイプだから賃貸にも安心✨ 遮光1級で光をしっかりシャットアウト！サイズオーダーできるから窓にぴったりフィットします。部屋がオシャレになる✨\n\n#ロールスクリーン #遮光 #カーテン #インテリア #楽天ROOM"},
+{no:79,time:"noon",genre:"interior",product:"フォトフレーム 北欧 おしゃれ 壁掛け",text:"押し花やポストカードを挟んでおしゃれに飾れる✨ 北欧テイストのデザインがSNSでも話題🌿 プチプラなのにセンスよく見せてくれるから一人暮らしのインテリアにも◎\n\n#フォトフレーム #北欧インテリア #壁飾り #おしゃれインテリア #楽天ROOM"},
+{no:80,time:"noon",genre:"interior",product:"山崎実業 マグネット 浮かせる収納 バスルーム",text:"浮かせる収納で水垢・ヌメリ知らず✨ マグネットで簡単に着脱できるから掃除が超ラクになった！山崎実業のシンプルデザインはバスルームをすっきり見せてくれます🛁\n\n#山崎実業 #浮かせる収納 #バスルーム収納 #収納グッズ #楽天ROOM"},
+{no:81,time:"noon",genre:"interior",product:"コーヒーテーブル おしゃれ 大理石 北欧",text:"大理石調のコーヒーテーブルがリビングを一気にラグジュアリーな雰囲気に！💎 本物の大理石じゃなくても見た目は十分おしゃれ。コーヒーを飲みながら至福のひとときを。\n\n#コーヒーテーブル #大理石 #北欧インテリア #リビング #楽天ROOM"},
+{no:82,time:"noon",genre:"interior",product:"バスタオル ホテル仕様 厚手 ふわふわ",text:"ホテルみたいなふわふわバスタオルで毎日のお風呂が贅沢な時間に🛁 厚手でしっかり水分を吸い取ってくれるから気持ちいい！白色で統一するとバスルームがスッキリ見える✨\n\n#バスタオル #ホテルタオル #バスルーム #インテリア #楽天ROOM"},
+{no:83,time:"noon",genre:"interior",product:"スリッパ おしゃれ 洗える 北欧",text:"来客用にも使えるおしゃれなスリッパを揃えました👟 洗えるタイプだから清潔に保てる！北欧テイストのデザインが玄関を彩ってくれます。意外と目に付く場所だからこだわって◎\n\n#スリッパ #洗えるスリッパ #北欧インテリア #玄関インテリア #楽天ROOM"},
+{no:84,time:"noon",genre:"interior",product:"ゴミ箱 分別 おしゃれ スリム",text:"分別できるおしゃれなゴミ箱でキッチンの生活感を隠す！🗑️ スリムタイプだからキッチンの隙間にすっきり収まります。見せてもいいゴミ箱は部屋の雰囲気を壊さない◎\n\n#ゴミ箱 #分別ゴミ箱 #キッチンインテリア #収納グッズ #楽天ROOM"},
+{no:85,time:"noon",genre:"interior",product:"電球 LED おしゃれ エジソン電球",text:"エジソン電球に変えるだけで部屋がカフェみたいな雰囲気に💡 温かみのあるオレンジ色の光がリラックス効果抜群！LEDだから省エネで長持ちするのもポイント高い✨\n\n#エジソン電球 #LED電球 #照明 #カフェインテリア #楽天ROOM"},
+{no:86,time:"noon",genre:"interior",product:"ハンガーラック スチール おしゃれ 衣類収納",text:"見せる収納のハンガーラックでクローゼット代わりに活用✨ スチール製でスタイリッシュな見た目！お気に入りの服をディスプレイして毎朝のコーデ選びが楽しくなりました。\n\n#ハンガーラック #衣類収納 #見せる収納 #インテリア #楽天ROOM"},
+{no:87,time:"noon",genre:"interior",product:"お香 インセンス スタンド おしゃれ",text:"毎日のお香タイムが至福のひとときに🌸 おしゃれなインセンスホルダーに立てると部屋がアジアンリゾート風に！お気に入りの香りで気分転換と集中力アップを同時に。\n\n#お香 #インセンス #アロマ #リラックス #楽天ROOM"},
+{no:88,time:"noon",genre:"interior",product:"キャンドル ソイキャンドル おしゃれ",text:"夜のリラックスタイムにソイキャンドルを灯すのが習慣に🕯️ 天然素材のソイキャンドルは煤が出にくくて安心。柔らかな炎の揺らめきと香りで部屋が一気に癒やし空間に✨\n\n#キャンドル #ソイキャンドル #リラックス #インテリア雑貨 #楽天ROOM"},
+{no:89,time:"noon",genre:"interior",product:"プランター 植木鉢 おしゃれ 北欧 室内",text:"おしゃれなプランターに植え替えるだけで植物の見え方が全然違う🌿 北欧テイストのシンプルデザインがどんな部屋にも合わせやすい！グリーンで部屋に生命感をプラス。\n\n#プランター #植木鉢 #観葉植物 #北欧インテリア #楽天ROOM"},
+{no:90,time:"noon",genre:"interior",product:"枕 低反発 快眠 おすすめ",text:"枕を変えてから朝の首の痛みが劇的に改善！😴 低反発素材が頭と首にぴったりフィットしてくれます。睡眠の質が上がったら毎日の生活が変わった！寝具投資は絶対におすすめ。\n\n#枕 #低反発枕 #快眠 #睡眠グッズ #楽天ROOM"},
+{no:91,time:"noon",genre:"interior",product:"ベッドカバー キルトカバー おしゃれ 北欧",text:"ベッドカバーをキルトタイプに変えたらベッドルームがホテルライクに変身🏨 ふっくらとした見た目が豪華で満足感がある！北欧デザインで寝室インテリアが一気に格上げ✨\n\n#ベッドカバー #キルトカバー #寝室インテリア #北欧インテリア #楽天ROOM"},
+{no:92,time:"noon",genre:"interior",product:"洗剤 詰め替えボトル おしゃれ 統一",text:"洗剤のボトルをおしゃれな詰め替えボトルに統一したらキッチンとバスルームがスッキリした！✨ ラベルを統一するだけで生活感が激減。インスタ映えするキッチンを目指して！\n\n#詰め替えボトル #キッチン収納 #洗剤ボトル #インテリア雑貨 #楽天ROOM"},
+{no:93,time:"noon",genre:"interior",product:"タオルハンガー おしゃれ 壁掛け 木製",text:"木製のタオルハンガーに変えたらバスルームがナチュラルカフェ風に🌿 タオルをきれいに掛けるだけでバスルームが整って見える！シンプルなのに高見えするデザインが好き。\n\n#タオルハンガー #バスルーム #木製インテリア #ナチュラルインテリア #楽天ROOM"},
+{no:94,time:"noon",genre:"interior",product:"サイドテーブル ベッド おしゃれ 小さい",text:"ベッドサイドに小さなサイドテーブルを置いたら生活の質が爆上がり📱 スマホの充電場所・本を置く場所・飲み物を置く場所が全部解決！小さいのに大活躍の優秀家具✨\n\n#サイドテーブル #ベッドサイド #寝室インテリア #一人暮らし #楽天ROOM"},
+{no:95,time:"noon",genre:"interior",product:"マルチカバー ソファカバー おしゃれ",text:"くたびれたソファをマルチカバーで即おしゃれに変身させた✨ 洗えるから清潔に保てるし季節ごとに変えて模様替えも楽しめる！低コストで部屋の雰囲気を変える最強アイテム。\n\n#ソファカバー #マルチカバー #模様替え #インテリア #楽天ROOM"},
+{no:96,time:"noon",genre:"interior",product:"ハーバリウム 瓶 インテリア おしゃれ",text:"ハーバリウムをリビングに飾ったら部屋が一気に華やいだ🌸 光の当たり方で色が変わって見える神秘的な美しさに毎日癒やされています✨ ハンドメイドにも挑戦してみたい！\n\n#ハーバリウム #インテリア雑貨 #花インテリア #おしゃれインテリア #楽天ROOM"},
+{no:97,time:"noon",genre:"interior",product:"スチームアイロン コンパクト 衣類スチーマー",text:"衣類スチーマーに変えてからアイロンがけがストレスフリーに！👗 ハンガーに掛けたままシワを伸ばせるから時短にもなります。コンパクトで収納場所を取らないのも◎\n\n#衣類スチーマー #スチームアイロン #時短家事 #生活家電 #楽天ROOM"},
+{no:98,time:"noon",genre:"interior",product:"デスクマット おしゃれ 革 大判",text:"大判の革製デスクマットを敷いたらデスク周りが一気にプロっぽくなった✨ 手触りも良くてテンションが上がる！テレワークのモチベーションアップにも一役買っています。\n\n#デスクマット #デスク周り #テレワーク #インテリア雑貨 #楽天ROOM"},
+{no:99,time:"noon",genre:"interior",product:"モビール おしゃれ インテリア 北欧",text:"天井から吊るすモビールが部屋に動きとリズムを生み出してくれる🌿 風でゆらゆら揺れる様子が見ていて飽きない！北欧テイストのシンプルなデザインが大好きです✨\n\n#モビール #北欧インテリア #インテリア雑貨 #部屋作り #楽天ROOM"},
+{no:100,time:"noon",genre:"interior",product:"トレイ 収納 おしゃれ 玄関 鍵置き",text:"玄関に置くだけで帰宅後の鍵やスマホの置き場所が決まる！📱 おしゃれなトレイを置くだけで玄関がホテルのエントランスみたいに見える✨ プチプラで始められる玄関インテリア。\n\n#トレイ #玄関収納 #鍵置き #インテリア雑貨 #楽天ROOM"},
+];
+const genreLabel={manga:"📚 漫画",interior:"🏠 インテリア"};
+const timeLabel={midnight:"🌙 深夜0時",noon:"☀️ 昼12時"};
+let doneSet=new Set(JSON.parse(localStorage.getItem('room_done_v2')||'[]'));
+let currentFilter='all';
+function rakutenUrl(p){return 'https://search.rakuten.co.jp/search/mall/'+encodeURIComponent(p)+'/';}
+function saveDone(){localStorage.setItem('room_done_v2',JSON.stringify([...doneSet]));}
+function updateProgress(){
+  const total=posts.length,done=doneSet.size;
+  document.getElementById('progressBar').style.width=Math.round(done/total*100)+'%';
+  document.getElementById('progressText').textContent=done+' / '+total+' 件投稿済み';
+  const mdDone=posts.filter(p=>p.time==='midnight'&&doneSet.has(p.no)).length;
+  const nDone=posts.filter(p=>p.time==='noon'&&doneSet.has(p.no)).length;
+  document.getElementById('cnt-midnight').textContent=mdDone+'/50';
+  document.getElementById('cnt-noon').textContent=nDone+'/50';
+  document.getElementById('cnt-total').textContent=done+'/100';
+}
+function filterTab(filter,btn){
+  currentFilter=filter;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+function renderList(){
+  const list=document.getElementById('list');
+  let f=posts;
+  if(currentFilter==='midnight')f=posts.filter(p=>p.time==='midnight');
+  else if(currentFilter==='noon')f=posts.filter(p=>p.time==='noon');
+  else if(currentFilter==='undone')f=posts.filter(p=>!doneSet.has(p.no));
+  else if(currentFilter==='manga')f=posts.filter(p=>p.genre==='manga');
+  else if(currentFilter==='interior')f=posts.filter(p=>p.genre==='interior');
+  if(f.length===0){list.innerHTML='<div class="empty">🎉 このフィルターの投稿はすべて完了しました！</div>';return;}
+  const CHK='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  list.innerHTML=f.map(p=>{
+    const done=doneSet.has(p.no);
+    return `<div class="post-card ${done?'done':''}" id="card-${p.no}">
+      <div class="card-header">
+        <span class="card-no">#${p.no}</span>
+        <span class="time-badge time-${p.time}">${timeLabel[p.time]}</span>
+        <span class="genre-badge genre-${p.genre}">${genreLabel[p.genre]}</span>
+      </div>
+      <div class="card-body">
+        <div class="product-name">${p.product}</div>
+        <a class="link-btn" href="${rakutenUrl(p.product)}" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          楽天市場で商品を探す →
+        </a>
+        <div class="copy-area" onclick="copyText(${p.no})">${p.text}</div>
+        <div class="copy-hint">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          タップでコピー（投稿文＋ハッシュタグ）
+        </div>
+        <div class="check-row">
+          <button class="check-btn ${done?'checked':''}" onclick="toggleDone(${p.no})" id="btn-${p.no}">
+            <span class="check-icon">${done?CHK:''}</span>
+            ${done?'投稿済み':'投稿済みにする'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function copyText(no){
+  const post=posts.find(p=>p.no===no);if(!post)return;
+  navigator.clipboard.writeText(post.text).then(()=>showToast()).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=post.text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);showToast();
+  });
+}
+function showToast(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function toggleDone(no){
+  if(doneSet.has(no))doneSet.delete(no);else doneSet.add(no);
+  saveDone();updateProgress();
+  const done=doneSet.has(no);
+  const card=document.getElementById('card-'+no);
+  const btn=document.getElementById('btn-'+no);
+  const CHK='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  if(card)card.classList.toggle('done',done);
+  if(btn){btn.className='check-btn'+(done?' checked':'');btn.innerHTML=`<span class="check-icon">${done?CHK:''}</span>${done?'投稿済み':'投稿済みにする'}`;}
+  if(currentFilter==='undone')renderList();
+}
+updateProgress();
+renderList();
+</script>
+</body>
+</html>
